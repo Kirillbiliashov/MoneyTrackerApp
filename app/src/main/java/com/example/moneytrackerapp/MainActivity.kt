@@ -3,6 +3,7 @@ package com.example.moneytrackerapp
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -23,8 +24,11 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.DateRange
+import androidx.compose.material.icons.filled.KeyboardArrowDown
+import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material.icons.rounded.Edit
 import androidx.compose.material.icons.rounded.List
 import androidx.compose.material3.Button
@@ -59,6 +63,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
@@ -151,11 +156,7 @@ fun BottomSheetContent(onSaveClick: () -> Unit, modifier: Modifier = Modifier) {
             label = { Text(text = "Sum") },
             modifier = modifier.padding(vertical = 8.dp)
         )
-        CategoryDropdown(
-            expanded = uiState.value.dropdownExpanded,
-            onDropdownIconClick = viewModel::toggleDropdown,
-            onHideDropdown = viewModel::hideDropdownOptions
-        )
+        CategoryDropdown(viewModel = viewModel)
         OutlinedTextField(
             value = uiState.value.note ?: "",
             onValueChange = viewModel::updateExpenseNote,
@@ -169,19 +170,22 @@ fun BottomSheetContent(onSaveClick: () -> Unit, modifier: Modifier = Modifier) {
 
 @Composable
 fun CategoryDropdown(
-    expanded: Boolean,
-    onDropdownIconClick: () -> Unit,
-    onHideDropdown: () -> Unit,
+    viewModel: ExpenseScreenViewModel,
     modifier: Modifier = Modifier
 ) {
-    Box {
+    val uiState = viewModel.uiState.collectAsState()
+    val expanded = uiState.value.dropdownExpanded
+    val imageVector = if (expanded) Icons.Default.KeyboardArrowUp
+    else Icons.Default.KeyboardArrowDown
+    Box() {
         OutlinedTextField(
-            value = "Select category",
+            value = uiState.value.category ?: "Select category",
+            readOnly = true,
             trailingIcon = {
                 Icon(
-                    imageVector = Icons.Default.ArrowDropDown,
+                    imageVector = imageVector,
                     contentDescription = null,
-                    modifier = modifier.clickable(onClick = onDropdownIconClick)
+                    modifier = modifier.clickable(onClick = viewModel::toggleDropdown)
                 )
             },
             onValueChange = {},
@@ -190,13 +194,15 @@ fun CategoryDropdown(
             modifier = modifier.padding(vertical = 8.dp)
         )
         DropdownMenu(
+            offset = DpOffset(0.dp, 65.dp),
             expanded = expanded,
-            onDismissRequest = onHideDropdown,
+            onDismissRequest = viewModel::hideDropdownOptions,
+            modifier = modifier.fillMaxWidth(0.68f)
         ) {
             Datasource.categories.forEach {
                 DropdownMenuItem(
                     text = { Text(text = it) },
-                    onClick = onHideDropdown
+                    onClick = { viewModel.updateExpenseCategory(it) }
                 )
             }
         }

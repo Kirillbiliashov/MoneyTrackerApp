@@ -12,7 +12,7 @@ data class ExpenseScreenUIState(
     val dropdownExpanded: Boolean = false,
     val name: String = "",
     val sum: Double = 0.0,
-    val category: String = "",
+    val category: String? = null,
     val note: String? = null
 )
 
@@ -35,7 +35,7 @@ class ExpenseScreenViewModel : ViewModel() {
     }
 
     fun updateExpenseCategory(category: String) {
-
+        _uiState.update { it.copy(category = category, dropdownExpanded = false) }
     }
 
     fun toggleDropdown() {
