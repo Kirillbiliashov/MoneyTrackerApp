@@ -13,7 +13,8 @@ import java.time.format.DateTimeFormatter
 data class HomeScreenUIState(
     val dropdownExpanded: Boolean = false,
     val calendarTypeIdx: Int = 0,
-    val chosenDate: String = HomeScreenUtils.getCurrentDate()
+    val chosenDate: String = HomeScreenUtils.getCurrentDate(),
+    val bottomSheetDisplayed: Boolean = false
 )
 
 class HomeScreenViewModel : ViewModel() {
@@ -60,5 +61,12 @@ class HomeScreenViewModel : ViewModel() {
         }
     }
 
+    fun displayBottomSheet() {
+        _uiState.update { it.copy(bottomSheetDisplayed = true) }
+    }
+
+    fun hideBottomSheet() {
+        _uiState.update { it.copy(bottomSheetDisplayed = false) }
+    }
 
 }
