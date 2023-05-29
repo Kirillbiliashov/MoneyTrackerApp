@@ -48,6 +48,9 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.moneytrackerapp.ui.homescreen.HomeScreenViewModel
 import com.example.moneytrackerapp.ui.theme.MoneyTrackerAppTheme
+import com.maxkeppeker.sheets.core.models.base.rememberSheetState
+import com.maxkeppeler.sheets.calendar.CalendarDialog
+import com.maxkeppeler.sheets.calendar.models.CalendarSelection
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -93,13 +96,18 @@ fun HomeScreenContent(modifier: Modifier = Modifier) {
     HomeScreenButtons()
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DatesHeader(viewModel: HomeScreenViewModel, modifier: Modifier = Modifier) {
+    val sheetState = rememberSheetState()
+    CalendarDialog(
+        state = sheetState,
+        selection = CalendarSelection.Date { viewModel.updateChosenDate(it) })
     Row(
         horizontalArrangement = Arrangement.Center,
         verticalAlignment = CenterVertically,
     ) {
-        IconButton(onClick = { /*TODO*/ }) {
+        IconButton(onClick = { sheetState.show() }) {
             Icon(imageVector = Icons.Default.DateRange, contentDescription = null)
         }
         Spacer(modifier = modifier.weight(1f))

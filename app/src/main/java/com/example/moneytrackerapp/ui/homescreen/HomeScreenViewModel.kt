@@ -4,6 +4,8 @@ import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.State
 import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
+import java.time.LocalDate
+import java.time.format.DateTimeFormatter
 
 data class HomeScreenUIState(
     val dropdownExpanded: Boolean = false,
@@ -42,6 +44,14 @@ class HomeScreenViewModel : ViewModel() {
 
     fun updateChosenDate(newDate: String) {
         _uiState.value = _uiState.value.copy(chosenDate = newDate)
+    }
+
+    fun updateChosenDate(localDate: LocalDate) {
+        val formatter = DateTimeFormatter.ofPattern("dd.MM")
+        _uiState.value = _uiState.value.copy(
+            chosenDate = localDate.format(formatter),
+            calendarTypeIdx = 0
+        )
     }
 
 

@@ -60,9 +60,8 @@ object HomeScreenUtils {
         return monthList
     }
 
-    fun getCurrentDate() =  LocalDate.now()
-        .format(DateTimeFormatter.ofPattern("dd.MM.y"))
-        .substring(0, 5)
+    fun getCurrentDate() = LocalDate.now()
+        .format(DateTimeFormatter.ofPattern("dd.MM"))
 
 
 }
