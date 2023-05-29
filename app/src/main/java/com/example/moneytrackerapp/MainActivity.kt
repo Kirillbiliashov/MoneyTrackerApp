@@ -1,16 +1,9 @@
 package com.example.moneytrackerapp
 
-import android.annotation.SuppressLint
-import android.app.DatePickerDialog
-import android.os.Build
 import android.os.Bundle
-import android.widget.CalendarView
-import android.widget.Space
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.annotation.RequiresApi
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -18,25 +11,20 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.DateRange
-import androidx.compose.material.icons.rounded.Add
 import androidx.compose.material.icons.rounded.Edit
 import androidx.compose.material.icons.rounded.List
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.CardElevation
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -49,11 +37,6 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Alignment.Companion.CenterVertically
 import androidx.compose.ui.Modifier
@@ -62,10 +45,9 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.moneytrackerapp.ui.homescreen.HomeScreenViewModel
 import com.example.moneytrackerapp.ui.theme.MoneyTrackerAppTheme
-import java.time.LocalDate
-import java.time.format.DateTimeFormatter
-import java.util.Calendar
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -102,14 +84,8 @@ fun MoneyTrackerApp(modifier: Modifier = Modifier) {
 
 @Composable
 fun HomeScreenContent(modifier: Modifier = Modifier) {
-    Row(horizontalArrangement = Arrangement.Center) {
-        IconButton(onClick = { /*TODO*/ }) {
-            Icon(imageVector = Icons.Default.DateRange, contentDescription = null)
-        }
-        Spacer(modifier = modifier)
-        CarouselTypeDropdown()
-    }
-    DatePickerCarousel()
+    val viewModel: HomeScreenViewModel = viewModel()
+    DatesHeader(viewModel = viewModel)
     Spacer(modifier = Modifier.height(40.dp))
     Text(text = "$0.00", fontSize = 48.sp)
     Spacer(modifier = Modifier.height(40.dp))
@@ -118,56 +94,77 @@ fun HomeScreenContent(modifier: Modifier = Modifier) {
 }
 
 @Composable
-fun CarouselTypeDropdown(modifier: Modifier = Modifier) {
-    val calendarOptions = listOf("Daily", "Monthly", "Weekly")
-    var idx by rememberSaveable { mutableStateOf(0) }
-    var expanded by remember { mutableStateOf(false) }
-    Box {
+fun DatesHeader(viewModel: HomeScreenViewModel, modifier: Modifier = Modifier) {
+    Row(
+        horizontalArrangement = Arrangement.Center,
+        verticalAlignment = CenterVertically,
+    ) {
+        IconButton(onClick = { /*TODO*/ }) {
+            Icon(imageVector = Icons.Default.DateRange, contentDescription = null)
+        }
+        Spacer(modifier = modifier.weight(1f))
+        CalendarDropdown(viewModel = viewModel)
+    }
+    DateItems(viewModel = viewModel)
+}
+
+@Composable
+fun CalendarDropdown(viewModel: HomeScreenViewModel, modifier: Modifier = Modifier) {
+    val uiState = viewModel.uiState
+    Box(modifier = Modifier.padding(end = 8.dp)) {
         Text(
-            text = calendarOptions[idx],
-            modifier = modifier.clickable(onClick = { expanded = true })
+            text = viewModel.currentCalendarOption,
+            modifier = modifier.clickable(onClick = { viewModel.expandDropdown() })
         )
         DropdownMenu(
-            expanded = expanded,
-            onDismissRequest = { expanded = false },
+            expanded = uiState.value.dropdownExpanded,
+            onDismissRequest = { viewModel.dismissDropdown() },
             modifier = Modifier.fillMaxWidth(0.3f)
         ) {
-            calendarOptions.forEachIndexed { index, s ->
-                DropdownMenuItem(text = { Text(text = s) },
-                    onClick = {
-                        idx = index
-                        expanded = false
-                    })
-            }
+            DropdownMenuOptions(
+                options = viewModel.calendarOptions,
+                onItemClick = { viewModel.changeDropdownOption(it) })
         }
     }
 }
 
 
 @Composable
-fun DatePickerCarousel(modifier: Modifier = Modifier) {
-    var chosenDate by rememberSaveable {
-        mutableStateOf(HomeScreenUtils.getCurrentDate())
-    }
+fun DateItems(viewModel: HomeScreenViewModel, modifier: Modifier = Modifier) {
+    val uiState = viewModel.uiState
     LazyRow(
         modifier = modifier
             .fillMaxWidth()
             .height(50.dp),
         verticalAlignment = CenterVertically
     ) {
-        items(items = HomeScreenUtils.getDateRange()) { item ->
-            val color = if (item == chosenDate) Color(177, 188, 247, 255)
+        items(items = viewModel.dateItems) { item ->
+            val color = if (item == uiState.value.chosenDate)
+                Color(177, 188, 247, 255)
             else Color.Transparent
             Text(
                 text = item, fontSize = 18.sp,
                 modifier = modifier
-                    .clickable(onClick = { chosenDate = item })
+                    .clickable(onClick = { viewModel.updateChosenDate(item) })
                     .background(color, shape = RoundedCornerShape(100.dp))
                     .padding(end = 8.dp, start = 8.dp)
             )
         }
     }
 }
+
+@Composable
+fun DropdownMenuOptions(
+    options: List<String>,
+    onItemClick: (Int) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    options.forEachIndexed { index, s ->
+        DropdownMenuItem(text = { Text(text = s) },
+            onClick = { onItemClick(index) })
+    }
+}
+
 
 @Composable
 fun ExpensesList(modifier: Modifier = Modifier) {
