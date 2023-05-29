@@ -4,6 +4,9 @@ import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.State
 import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.update
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 
@@ -14,9 +17,8 @@ data class HomeScreenUIState(
 )
 
 class HomeScreenViewModel : ViewModel() {
-    private var _uiState: MutableState<HomeScreenUIState> =
-        mutableStateOf(HomeScreenUIState())
-    val uiState: State<HomeScreenUIState> = _uiState
+    private var _uiState = MutableStateFlow(HomeScreenUIState())
+    val uiState: StateFlow<HomeScreenUIState> = _uiState
     val calendarOptions = listOf("Daily", "Monthly", "Weekly")
     val currentCalendarOption: String
         get() = calendarOptions[_uiState.value.calendarTypeIdx]
@@ -28,30 +30,34 @@ class HomeScreenViewModel : ViewModel() {
         }
 
     fun changeDropdownOption(newIdx: Int) {
-        _uiState.value = _uiState.value.copy(
-            calendarTypeIdx = newIdx,
-            dropdownExpanded = false
-        )
+        _uiState.update {
+            it.copy(
+                calendarTypeIdx = newIdx,
+                dropdownExpanded = false
+            )
+        }
     }
 
     fun expandDropdown() {
-        _uiState.value = _uiState.value.copy(dropdownExpanded = true)
+        _uiState.update { it.copy(dropdownExpanded = true) }
     }
 
     fun dismissDropdown() {
-        _uiState.value = _uiState.value.copy(dropdownExpanded = false)
+        _uiState.update { it.copy(dropdownExpanded = false) }
     }
 
     fun updateChosenDate(newDate: String) {
-        _uiState.value = _uiState.value.copy(chosenDate = newDate)
+        _uiState.update { it.copy(chosenDate = newDate) }
     }
 
     fun updateChosenDate(localDate: LocalDate) {
         val formatter = DateTimeFormatter.ofPattern("dd.MM")
-        _uiState.value = _uiState.value.copy(
-            chosenDate = localDate.format(formatter),
-            calendarTypeIdx = 0
-        )
+        _uiState.update {
+            it.copy(
+                chosenDate = localDate.format(formatter),
+                calendarTypeIdx = 0
+            )
+        }
     }
 
 
