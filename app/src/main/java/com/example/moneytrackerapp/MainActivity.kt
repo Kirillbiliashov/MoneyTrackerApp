@@ -13,7 +13,6 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -24,8 +23,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material.icons.filled.ArrowDropDown
+import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.KeyboardArrowUp
@@ -50,13 +48,7 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
-import androidx.compose.ui.Alignment.Companion.Center
 import androidx.compose.ui.Alignment.Companion.CenterVertically
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -66,7 +58,6 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.ui.window.Dialog
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.moneytrackerapp.ui.expensescreen.ExpenseScreenViewModel
 import com.example.moneytrackerapp.ui.homescreen.HomeScreenViewModel
@@ -74,7 +65,6 @@ import com.example.moneytrackerapp.ui.theme.MoneyTrackerAppTheme
 import com.maxkeppeker.sheets.core.models.base.rememberSheetState
 import com.maxkeppeler.sheets.calendar.CalendarDialog
 import com.maxkeppeler.sheets.calendar.models.CalendarSelection
-import kotlinx.coroutines.launch
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -117,25 +107,91 @@ fun HomeScreenContent(modifier: Modifier = Modifier) {
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     val viewModel: HomeScreenViewModel = viewModel()
     val uiState = viewModel.uiState.collectAsState()
-    if (uiState.value.bottomSheetDisplayed) {
+    AnimatedVisibility(
+        visible = uiState.value.expenseSheetDisplayed
+    ) {
         ModalBottomSheet(
-            onDismissRequest = viewModel::hideBottomSheet,
+            onDismissRequest = viewModel::hideExpenseSheet,
             sheetState = sheetState
         ) {
-            BottomSheetContent(onSaveClick = viewModel::hideBottomSheet)
+            ExpenseSheetContent(onSaveClick = viewModel::hideExpenseSheet)
+        }
+    }
+    AnimatedVisibility(
+        visible = uiState.value.categoriesSheetDisplayed
+    ) {
+        ModalBottomSheet(
+            onDismissRequest = viewModel::hideCategoriesSheet,
+            sheetState = sheetState
+        ) {
+            CategoriesSheetContent(
+                onButtonClick = viewModel::hideCategoriesSheet,
+                onChooseCategory = viewModel::changeChosenCategory,
+                chosenCategories = uiState.value.chosenCategories
+            )
         }
     }
     DatesHeader(viewModel = viewModel)
     Spacer(modifier = Modifier.height(40.dp))
     Text(text = "$0.00", fontSize = 48.sp)
     Spacer(modifier = Modifier.height(40.dp))
-    ExpensesList(modifier = modifier)
-    HomeScreenButtons(onShowEditSheet = viewModel::displayBottomSheet)
+    ExpensesList(
+        categories = uiState.value.chosenCategories,
+        modifier = modifier
+    )
+    HomeScreenButtons(
+        onShowCategoriesSheet = viewModel::displayCategoriesSheet,
+        onShowEditSheet = viewModel::displayExpenseSheet
+    )
 }
 
+@Composable
+fun CategoriesSheetContent(
+    onButtonClick: () -> Unit,
+    onChooseCategory: (String, Boolean) -> Unit,
+    chosenCategories: List<String>, modifier: Modifier = Modifier
+) {
+    val categories = Datasource.categories
+    val allCategoriesChosen = categories == chosenCategories
+    Column(
+        modifier = Modifier.fillMaxSize(),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Row(
+            modifier = modifier
+                .clickable(onClick = {})
+                .padding(8.dp)
+        ) {
+            Text(text = "All")
+            Spacer(modifier = modifier.weight(1f))
+            if (allCategoriesChosen) {
+                Icon(imageVector = Icons.Default.Check, contentDescription = null)
+            }
+        }
+        LazyColumn {
+            items(items = categories) {
+                Row(
+                    modifier = modifier
+                        .clickable(onClick = { onChooseCategory(it, allCategoriesChosen) })
+                        .padding(8.dp)
+                ) {
+                    Text(text = it, fontSize = 18.sp)
+                    Spacer(modifier = modifier.weight(1f))
+                    if (!allCategoriesChosen && chosenCategories.contains(it)) {
+                        Icon(imageVector = Icons.Default.Check, contentDescription = null)
+                    }
+                }
+            }
+        }
+        Spacer(modifier = modifier.weight(1f))
+        Button(onClick = onButtonClick, modifier = modifier.padding(bottom = 48.dp)) {
+            Text(text = "Ok")
+        }
+    }
+}
 
 @Composable
-fun BottomSheetContent(onSaveClick: () -> Unit, modifier: Modifier = Modifier) {
+fun ExpenseSheetContent(onSaveClick: () -> Unit, modifier: Modifier = Modifier) {
     val viewModel: ExpenseScreenViewModel = viewModel()
     val uiState = viewModel.uiState.collectAsState()
     Column(
@@ -290,14 +346,14 @@ fun DropdownMenuOptions(
 
 
 @Composable
-fun ExpensesList(modifier: Modifier = Modifier) {
+fun ExpensesList(categories: List<String>, modifier: Modifier = Modifier) {
     LazyColumn(
         modifier = modifier
             .fillMaxWidth()
             .padding(bottom = 16.dp),
         contentPadding = PaddingValues(8.dp)
     ) {
-        items(items = Datasource.categories) { category ->
+        items(items = categories) { category ->
             CategorySection(
                 category = category,
                 modifier = modifier
@@ -309,10 +365,12 @@ fun ExpensesList(modifier: Modifier = Modifier) {
 }
 
 @Composable
-fun HomeScreenButtons(onShowEditSheet: () -> Unit, modifier: Modifier = Modifier) {
+fun HomeScreenButtons(
+    onShowCategoriesSheet: () -> Unit,
+    onShowEditSheet: () -> Unit, modifier: Modifier = Modifier) {
     Row(modifier = Modifier.padding(bottom = 32.dp, start = 16.dp, end = 16.dp)) {
         FloatingActionButton(
-            onClick = { },
+            onClick = onShowCategoriesSheet,
             shape = RoundedCornerShape(16.dp),
         ) {
             Icon(
@@ -334,7 +392,6 @@ fun HomeScreenButtons(onShowEditSheet: () -> Unit, modifier: Modifier = Modifier
         }
     }
 }
-
 
 @Composable
 fun CategorySection(category: String, modifier: Modifier = Modifier) {

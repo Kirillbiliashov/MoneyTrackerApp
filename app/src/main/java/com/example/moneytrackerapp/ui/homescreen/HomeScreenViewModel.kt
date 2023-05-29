@@ -1,9 +1,7 @@
 package com.example.moneytrackerapp.ui.homescreen
 
-import androidx.compose.runtime.MutableState
-import androidx.compose.runtime.State
-import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
+import com.example.moneytrackerapp.Datasource
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.update
@@ -14,7 +12,9 @@ data class HomeScreenUIState(
     val dropdownExpanded: Boolean = false,
     val calendarTypeIdx: Int = 0,
     val chosenDate: String = HomeScreenUtils.getCurrentDate(),
-    val bottomSheetDisplayed: Boolean = false
+    val expenseSheetDisplayed: Boolean = false,
+    val categoriesSheetDisplayed: Boolean = false,
+    val chosenCategories: List<String> = Datasource.categories
 )
 
 class HomeScreenViewModel : ViewModel() {
@@ -23,6 +23,7 @@ class HomeScreenViewModel : ViewModel() {
     val calendarOptions = listOf("Daily", "Monthly", "Weekly")
     val currentCalendarOption: String
         get() = calendarOptions[_uiState.value.calendarTypeIdx]
+
     val dateItems: List<String>
         get() = when (currentCalendarOption) {
             "Monthly" -> HomeScreenUtils.getMonthsList()
@@ -61,12 +62,40 @@ class HomeScreenViewModel : ViewModel() {
         }
     }
 
-    fun displayBottomSheet() {
-        _uiState.update { it.copy(bottomSheetDisplayed = true) }
+    fun displayExpenseSheet() {
+        _uiState.update { it.copy(expenseSheetDisplayed = true) }
     }
 
-    fun hideBottomSheet() {
-        _uiState.update { it.copy(bottomSheetDisplayed = false) }
+    fun hideExpenseSheet() {
+        _uiState.update { it.copy(expenseSheetDisplayed = false) }
+    }
+
+    fun displayCategoriesSheet() {
+        _uiState.update { it.copy(categoriesSheetDisplayed = true) }
+    }
+
+    fun hideCategoriesSheet() {
+        _uiState.update { it.copy(categoriesSheetDisplayed = false) }
+    }
+
+    fun changeChosenCategory(category: String, isAllChosen: Boolean) {
+        if (isAllChosen) {
+            _uiState.update { state ->
+                state.copy(
+                    chosenCategories = listOf(category)
+                )
+            }
+        } else {
+            val chosenCategories = _uiState.value.chosenCategories
+            _uiState.update { state ->
+                state.copy(
+                    chosenCategories = if (!chosenCategories.contains(category)) listOf(
+                        *chosenCategories.toTypedArray(),
+                        category
+                    ) else chosenCategories.filter { it != category }
+                )
+            }
+        }
     }
 
 }
