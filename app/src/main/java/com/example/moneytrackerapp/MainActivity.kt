@@ -86,7 +86,15 @@ class MainActivity : ComponentActivity() {
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MoneyTrackerApp(modifier: Modifier = Modifier) {
-    Scaffold(topBar = { TopAppBar(title = { Text(text = "Money Tracker") }) }) {
+    Scaffold(topBar = {
+        TopAppBar(title = {
+            Text(
+                text = "Money Tracker",
+                style = MaterialTheme.typography.displayLarge,
+                fontSize = 32.sp
+            )
+        })
+    }) {
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -133,7 +141,7 @@ fun HomeScreenContent(modifier: Modifier = Modifier) {
     }
     DatesHeader(viewModel = viewModel)
     Spacer(modifier = Modifier.height(40.dp))
-    Text(text = "$0.00", fontSize = 48.sp)
+    Text(text = "$0.00", style = MaterialTheme.typography.displayLarge)
     Spacer(modifier = Modifier.height(40.dp))
     ExpensesList(
         categories = uiState.value.chosenCategories,
@@ -292,7 +300,8 @@ fun CalendarDropdown(viewModel: HomeScreenViewModel, modifier: Modifier = Modifi
     Box(modifier = Modifier.padding(end = 8.dp)) {
         Text(
             text = viewModel.currentCalendarOption,
-            modifier = modifier.clickable(onClick = { viewModel.expandDropdown() })
+            modifier = modifier.clickable(onClick = { viewModel.expandDropdown() }),
+            style = MaterialTheme.typography.displayMedium
         )
         DropdownMenu(
             expanded = uiState.value.dropdownExpanded,
@@ -319,7 +328,7 @@ fun DateItems(viewModel: HomeScreenViewModel, modifier: Modifier = Modifier) {
     ) {
         items(items = viewModel.dateItems) { item ->
             val color = if (item == uiState.value.chosenDate)
-                Color(177, 188, 247, 255)
+                MaterialTheme.colorScheme.inversePrimary
             else Color.Transparent
             Text(
                 text = item, fontSize = 18.sp,
@@ -396,7 +405,7 @@ fun HomeScreenButtons(
 @Composable
 fun CategorySection(category: String, modifier: Modifier = Modifier) {
     Column(modifier = modifier) {
-        Text(text = category, fontSize = 20.sp, fontWeight = FontWeight.Medium)
+        Text(text = category, style = MaterialTheme.typography.displayMedium)
         Datasource.getExpenses(category).forEach {
             ExpenseCard(expense = it)
         }
@@ -417,7 +426,7 @@ fun ExpenseCard(expense: Pair<String, Double>, modifier: Modifier = Modifier) {
         Row(
             modifier = modifier
                 .fillMaxSize()
-                .padding(4.dp),
+                .padding(8.dp),
             verticalAlignment = CenterVertically
         ) {
             Text(text = expense.first, fontSize = 18.sp)
@@ -430,7 +439,7 @@ fun ExpenseCard(expense: Pair<String, Double>, modifier: Modifier = Modifier) {
 @Preview
 @Composable
 fun AppPreview() {
-    MoneyTrackerAppTheme(darkTheme = true) {
+    MoneyTrackerAppTheme(darkTheme = false) {
         // A surface container using the 'background' color from the theme
         Surface(
             modifier = Modifier.fillMaxSize(),
