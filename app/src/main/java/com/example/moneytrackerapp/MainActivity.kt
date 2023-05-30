@@ -430,7 +430,7 @@ fun ExpenseCard(expense: Pair<String, Double>, modifier: Modifier = Modifier) {
 @Preview
 @Composable
 fun AppPreview() {
-    MoneyTrackerAppTheme {
+    MoneyTrackerAppTheme(darkTheme = true) {
         // A surface container using the 'background' color from the theme
         Surface(
             modifier = Modifier.fillMaxSize(),
