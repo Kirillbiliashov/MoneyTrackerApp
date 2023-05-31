@@ -23,6 +23,9 @@ class HomeScreenViewModel : ViewModel() {
     val currentCalendarOption: String
         get() = calendarOptions[_uiState.value.calendarTypeIdx]
 
+    val chosenDateIdx: Int
+        get() = dateItems.indexOf(uiState.value.chosenDate)
+
     val dateItems: List<String>
         get() = when (currentCalendarOption) {
             "Monthly" -> HomeScreenUtils.getMonthsList()

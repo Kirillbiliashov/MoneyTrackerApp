@@ -2,20 +2,25 @@ package com.example.moneytrackerapp.ui.homescreen
 
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
@@ -38,9 +43,12 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.drawWithContent
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.BlendMode
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
@@ -56,6 +64,7 @@ import com.example.moneytrackerapp.ui.expensescreen.ExpenseSheetContent
 import com.maxkeppeker.sheets.core.models.base.rememberSheetState
 import com.maxkeppeler.sheets.calendar.CalendarDialog
 import com.maxkeppeler.sheets.calendar.models.CalendarSelection
+import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -141,10 +150,22 @@ fun CalendarDropdown(viewModel: HomeScreenViewModel, modifier: Modifier = Modifi
 @Composable
 fun DateItems(viewModel: HomeScreenViewModel, modifier: Modifier = Modifier) {
     val uiState = viewModel.uiState.collectAsState()
+    val listState = rememberLazyListState(
+        initialFirstVisibleItemIndex = viewModel.chosenDateIdx - 3
+    )
     LazyRow(
+        state = listState,
         modifier = modifier
             .fillMaxWidth()
-            .height(50.dp),
+            .height(50.dp)
+            .graphicsLayer(compositingStrategy = CompositingStrategy.Offscreen)
+            .drawWithContent {
+                drawContent()
+                drawRect(
+                    brush = Brush.horizontalGradient(0f to Color.Transparent, 0.2f to Color.Red, 0.8f to Color.Red, 1f to Color.Transparent),
+                    blendMode = BlendMode.DstIn
+                )
+            },
         verticalAlignment = Alignment.CenterVertically
     ) {
         items(items = viewModel.dateItems) { item ->
@@ -156,7 +177,7 @@ fun DateItems(viewModel: HomeScreenViewModel, modifier: Modifier = Modifier) {
                 modifier = modifier
                     .clickable(onClick = { viewModel.updateChosenDate(item) })
                     .background(color, shape = RoundedCornerShape(100.dp))
-                    .padding(end = 8.dp, start = 8.dp)
+                    .padding(8.dp)
             )
         }
     }
@@ -179,7 +200,15 @@ fun ExpensesList(categories: List<String>, modifier: Modifier = Modifier) {
     LazyColumn(
         modifier = modifier
             .fillMaxWidth()
-            .padding(bottom = 16.dp),
+            .padding(bottom = 16.dp)
+            .graphicsLayer(compositingStrategy = CompositingStrategy.Offscreen)
+            .drawWithContent {
+                drawContent()
+                drawRect(
+                    brush = Brush.verticalGradient( 0.9f to Color.Red, 1f to Color.Transparent),
+                    blendMode = BlendMode.DstIn
+                )
+            },
         contentPadding = PaddingValues(8.dp)
     ) {
         items(items = categories) { category ->
