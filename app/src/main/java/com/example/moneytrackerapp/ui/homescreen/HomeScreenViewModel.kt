@@ -1,8 +1,14 @@
 package com.example.moneytrackerapp.ui.homescreen
 
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
+import com.example.moneytrackerapp.data.entity.ExpenseTuple
+import com.example.moneytrackerapp.data.repo.ExpenseRepository
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
@@ -15,10 +21,15 @@ data class HomeScreenUIState(
     val categoriesSheetDisplayed: Boolean = false
 )
 
-class HomeScreenViewModel : ViewModel() {
+data class HomeScreenDataState(
+    val expenses: List<ExpenseTuple> = listOf()
+)
+
+class HomeScreenViewModel(private val expenseRepository: ExpenseRepository) : ViewModel() {
 
     private var _uiState = MutableStateFlow(HomeScreenUIState())
     val uiState: StateFlow<HomeScreenUIState> = _uiState
+    val uiDataState: StateFlow<HomeScreenDataState>
     val calendarOptions = listOf("Daily", "Monthly", "Weekly")
     val currentCalendarOption: String
         get() = calendarOptions[_uiState.value.calendarTypeIdx]
@@ -32,6 +43,19 @@ class HomeScreenViewModel : ViewModel() {
             "Weekly" -> HomeScreenUtils.getWeeksList()
             else -> HomeScreenUtils.getDaysList()
         }
+
+    init {
+        uiDataState = expenseRepository.getExpensesByDate(LocalDate.now())
+            .map {
+                println("size of result is ${it.size}")
+                HomeScreenDataState(it)
+            }
+            .stateIn(
+                scope = viewModelScope,
+                started = SharingStarted.WhileSubscribed(TIMEOUT_MILLIS),
+                initialValue = HomeScreenDataState()
+            )
+    }
 
     fun changeDropdownOption(newIdx: Int) {
         _uiState.update {
@@ -83,6 +107,10 @@ class HomeScreenViewModel : ViewModel() {
 
     fun hideCategoriesSheet() {
         _uiState.update { it.copy(categoriesSheetDisplayed = false) }
+    }
+
+    companion object {
+        private const val TIMEOUT_MILLIS = 5_000L
     }
 
 }

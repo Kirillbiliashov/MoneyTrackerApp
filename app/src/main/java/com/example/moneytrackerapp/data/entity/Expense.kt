@@ -9,11 +9,12 @@ import androidx.room.PrimaryKey
     tableName = "expense",
     foreignKeys = [ForeignKey(
         entity = Category::class, parentColumns = ["id"],
-        childColumns = ["category_id"]
+        childColumns = ["category_id"],
+        onDelete = ForeignKey.CASCADE
     )]
 )
 data class Expense(
-    @PrimaryKey val id: Long,
+    @PrimaryKey val id: Int = 0,
     val name: String,
     val sum: Double,
     val date: Long,

@@ -4,7 +4,7 @@ import androidx.room.ColumnInfo
 import androidx.room.PrimaryKey
 
 data class ExpenseTuple(
-    val id: Long,
+    val id: Int,
     val name: String,
     val sum: Double,
     val date: Long,

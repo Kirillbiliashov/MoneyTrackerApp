@@ -59,6 +59,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.moneytrackerapp.Datasource
+import com.example.moneytrackerapp.data.entity.ExpenseTuple
+import com.example.moneytrackerapp.ui.ViewModelProvider
 import com.example.moneytrackerapp.ui.categoriesscreen.CategoriesSheetContent
 import com.example.moneytrackerapp.ui.expensescreen.ExpenseSheetContent
 import com.maxkeppeker.sheets.core.models.base.rememberSheetState
@@ -70,8 +72,9 @@ import kotlinx.coroutines.launch
 @Composable
 fun HomeScreenContent(modifier: Modifier = Modifier) {
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
-    val viewModel: HomeScreenViewModel = viewModel()
+    val viewModel: HomeScreenViewModel = viewModel(factory = ViewModelProvider.Factory)
     val uiState = viewModel.uiState.collectAsState()
+    val uiDataState = viewModel.uiDataState.collectAsState()
     SheetContent(sheetState = sheetState,
         visible = uiState.value.expenseSheetDisplayed,
         onHideSheet = viewModel::hideExpenseSheet) {
@@ -86,7 +89,7 @@ fun HomeScreenContent(modifier: Modifier = Modifier) {
     Spacer(modifier = Modifier.height(40.dp))
     Text(text = "$0.00", style = MaterialTheme.typography.displayLarge)
     Spacer(modifier = Modifier.height(40.dp))
-    ExpensesList(categories = Datasource.categories, modifier = modifier)
+    ExpensesList(expenses = uiDataState.value.expenses, modifier = modifier)
     HomeScreenButtons(
         onShowCategoriesSheet = viewModel::displayCategoriesSheet,
         onShowEditSheet = viewModel::displayExpenseSheet
@@ -200,7 +203,10 @@ fun DropdownMenuOptions(
 }
 
 @Composable
-fun ExpensesList(categories: List<String>, modifier: Modifier = Modifier) {
+fun ExpensesList(expenses: List<ExpenseTuple>, modifier: Modifier = Modifier) {
+    println("expenses size: ${expenses.size}")
+    val categoryExpensesMap = expenses.groupBy { it.categoryName }
+    println(categoryExpensesMap)
     LazyColumn(
         modifier = modifier
             .fillMaxWidth()
@@ -215,13 +221,17 @@ fun ExpensesList(categories: List<String>, modifier: Modifier = Modifier) {
             },
         contentPadding = PaddingValues(8.dp)
     ) {
-        items(items = categories) { category ->
-            CategorySection(
-                category = category,
+        items(items = categoryExpensesMap.keys.toList()) { category ->
+            Column(
                 modifier = modifier
                     .fillMaxWidth()
                     .padding(vertical = 8.dp)
-            )
+            ) {
+                Text(text = category, style = MaterialTheme.typography.displayMedium)
+                categoryExpensesMap[category]?.forEach {
+                    ExpenseCard(expense = it)
+                }
+            }
         }
     }
 }
@@ -262,17 +272,7 @@ fun HomeScreenFAB(
 }
 
 @Composable
-fun CategorySection(category: String, modifier: Modifier = Modifier) {
-    Column(modifier = modifier) {
-        Text(text = category, style = MaterialTheme.typography.displayMedium)
-        Datasource.getExpenses(category).forEach {
-            ExpenseCard(expense = it)
-        }
-    }
-}
-
-@Composable
-fun ExpenseCard(expense: Pair<String, Double>, modifier: Modifier = Modifier) {
+fun ExpenseCard(expense: ExpenseTuple, modifier: Modifier = Modifier) {
     Card(
         modifier = Modifier
             .padding(vertical = 8.dp, horizontal = 4.dp)
@@ -288,9 +288,9 @@ fun ExpenseCard(expense: Pair<String, Double>, modifier: Modifier = Modifier) {
                 .padding(8.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Text(text = expense.first, fontSize = 18.sp)
+            Text(text = expense.name, fontSize = 18.sp)
             Spacer(modifier = modifier.weight(1F))
-            Text(text = expense.second.toString(), fontSize = 18.sp)
+            Text(text = expense.sum.toString(), fontSize = 18.sp)
         }
     }
 }

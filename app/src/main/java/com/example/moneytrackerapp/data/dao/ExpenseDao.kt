@@ -10,9 +10,9 @@ import kotlinx.coroutines.flow.Flow
 interface ExpenseDao {
 
     @Query(
-        "SELECT expense.id AS id, expense.name AS name, sum, date, note, category.name" +
-                " AS category_name FROM expense JOIN category ON category_id = category.id" +
-                " WHERE date IN (:startDate, :endDate)"
+        "SELECT expense.id AS id, expense.name AS name, sum, date, note, " +
+                "category.name AS category_name FROM expense JOIN category ON " +
+                "category_id = category.id WHERE date BETWEEN :startDate AND :endDate"
     )
     fun getAllByDate(startDate: Long, endDate: Long): Flow<List<ExpenseTuple>>
 

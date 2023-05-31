@@ -10,7 +10,7 @@ import com.example.moneytrackerapp.data.entity.Category
 import com.example.moneytrackerapp.data.entity.Expense
 
 
-@Database(version = 1, entities = [Category::class, Expense::class])
+@Database(version = 3, entities = [Category::class, Expense::class])
 abstract class AppDatabase : RoomDatabase() {
 
     abstract fun getCategoryDao(): CategoryDao
@@ -23,7 +23,7 @@ abstract class AppDatabase : RoomDatabase() {
         fun getDatabase(context: Context): AppDatabase {
             return Instance ?: synchronized(this) {
                 Room.databaseBuilder(context, AppDatabase::class.java, "money_tracker")
-                    .createFromAsset("money_tracker.db")
+                    .createFromAsset("db/money_tracker.db")
                     .fallbackToDestructiveMigration()
                     .build()
                     .also { Instance = it }
