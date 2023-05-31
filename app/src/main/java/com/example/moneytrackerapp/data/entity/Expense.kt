@@ -17,5 +17,6 @@ data class Expense(
     val name: String,
     val sum: Double,
     val date: Long,
+    val note: String? = null,
     @ColumnInfo(name = "category_id") val categoryId: Int
 )
