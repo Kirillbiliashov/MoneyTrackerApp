@@ -13,8 +13,7 @@ data class HomeScreenUIState(
     val calendarTypeIdx: Int = 0,
     val chosenDate: String = HomeScreenUtils.getCurrentDate(),
     val expenseSheetDisplayed: Boolean = false,
-    val categoriesSheetDisplayed: Boolean = false,
-    val chosenCategories: List<String> = Datasource.categories
+    val categoriesSheetDisplayed: Boolean = false
 )
 
 class HomeScreenViewModel : ViewModel() {
@@ -76,26 +75,6 @@ class HomeScreenViewModel : ViewModel() {
 
     fun hideCategoriesSheet() {
         _uiState.update { it.copy(categoriesSheetDisplayed = false) }
-    }
-
-    fun changeChosenCategory(category: String, isAllChosen: Boolean) {
-        if (isAllChosen) {
-            _uiState.update { state ->
-                state.copy(
-                    chosenCategories = listOf(category)
-                )
-            }
-        } else {
-            val chosenCategories = _uiState.value.chosenCategories
-            _uiState.update { state ->
-                state.copy(
-                    chosenCategories = if (!chosenCategories.contains(category)) listOf(
-                        *chosenCategories.toTypedArray(),
-                        category
-                    ) else chosenCategories.filter { it != category }
-                )
-            }
-        }
     }
 
 }

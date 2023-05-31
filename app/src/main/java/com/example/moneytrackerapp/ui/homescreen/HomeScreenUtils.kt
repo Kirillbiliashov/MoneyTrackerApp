@@ -63,5 +63,4 @@ object HomeScreenUtils {
     fun getCurrentDate() = LocalDate.now()
         .format(DateTimeFormatter.ofPattern("dd.MM"))
 
-
 }
