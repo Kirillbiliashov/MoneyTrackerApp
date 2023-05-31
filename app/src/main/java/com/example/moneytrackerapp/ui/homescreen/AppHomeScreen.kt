@@ -157,12 +157,16 @@ fun DateItems(viewModel: HomeScreenViewModel, modifier: Modifier = Modifier) {
         state = listState,
         modifier = modifier
             .fillMaxWidth()
+            .border(2.dp, Color.Red)
             .height(50.dp)
             .graphicsLayer(compositingStrategy = CompositingStrategy.Offscreen)
             .drawWithContent {
                 drawContent()
                 drawRect(
-                    brush = Brush.horizontalGradient(0f to Color.Transparent, 0.2f to Color.Red, 0.8f to Color.Red, 1f to Color.Transparent),
+                    brush = Brush.horizontalGradient(
+                        0f to Color.Transparent,
+                        0.2f to Color.Red, 0.8f to Color.Red, 1f to Color.Transparent
+                    ),
                     blendMode = BlendMode.DstIn
                 )
             },
@@ -173,7 +177,7 @@ fun DateItems(viewModel: HomeScreenViewModel, modifier: Modifier = Modifier) {
                 MaterialTheme.colorScheme.inversePrimary
             else Color.Transparent
             Text(
-                text = item, fontSize = 18.sp,
+                text = item, fontSize = 16.sp,
                 modifier = modifier
                     .clickable(onClick = { viewModel.updateChosenDate(item) })
                     .background(color, shape = RoundedCornerShape(100.dp))
@@ -205,7 +209,7 @@ fun ExpensesList(categories: List<String>, modifier: Modifier = Modifier) {
             .drawWithContent {
                 drawContent()
                 drawRect(
-                    brush = Brush.verticalGradient( 0.9f to Color.Red, 1f to Color.Transparent),
+                    brush = Brush.verticalGradient(0.9f to Color.Red, 1f to Color.Transparent),
                     blendMode = BlendMode.DstIn
                 )
             },
@@ -241,7 +245,10 @@ fun HomeScreenButtons(
 }
 
 @Composable
-fun HomeScreenFAB(imageVector: ImageVector, onClick: () -> Unit, modifier: Modifier = Modifier) {
+fun HomeScreenFAB(
+    imageVector: ImageVector, onClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
     FloatingActionButton(
         onClick = onClick,
         shape = RoundedCornerShape(16.dp),

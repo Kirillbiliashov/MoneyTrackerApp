@@ -1,7 +1,6 @@
 package com.example.moneytrackerapp.ui.homescreen
 
 import androidx.lifecycle.ViewModel
-import com.example.moneytrackerapp.Datasource
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.update
@@ -11,12 +10,13 @@ import java.time.format.DateTimeFormatter
 data class HomeScreenUIState(
     val dropdownExpanded: Boolean = false,
     val calendarTypeIdx: Int = 0,
-    val chosenDate: String = HomeScreenUtils.getCurrentDate(),
+    val chosenDate: String = HomeScreenUtils.getCurrentDay(),
     val expenseSheetDisplayed: Boolean = false,
     val categoriesSheetDisplayed: Boolean = false
 )
 
 class HomeScreenViewModel : ViewModel() {
+
     private var _uiState = MutableStateFlow(HomeScreenUIState())
     val uiState: StateFlow<HomeScreenUIState> = _uiState
     val calendarOptions = listOf("Daily", "Monthly", "Weekly")
@@ -37,7 +37,12 @@ class HomeScreenViewModel : ViewModel() {
         _uiState.update {
             it.copy(
                 calendarTypeIdx = newIdx,
-                dropdownExpanded = false
+                dropdownExpanded = false,
+                chosenDate = when (newIdx) {
+                    1 -> HomeScreenUtils.getCurrentMonth()
+                    2 -> HomeScreenUtils.getCurrentWeek()
+                    else -> HomeScreenUtils.getCurrentDay()
+                }
             )
         }
     }
