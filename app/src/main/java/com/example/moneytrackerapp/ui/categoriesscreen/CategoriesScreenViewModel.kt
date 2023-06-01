@@ -10,7 +10,9 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
 data class CategoriesScreenUIState(
-    val chosenCategories: List<Category> = listOf()
+    val chosenCategories: List<Category> = listOf(),
+    val dialogShown: Boolean = false,
+    val addCategoryName: String = ""
 )
 
 class CategoriesScreenViewModel(private val categoryRepo: CategoryRepository) : ViewModel() {
@@ -24,6 +26,7 @@ class CategoriesScreenViewModel(private val categoryRepo: CategoryRepository) : 
         private set
 
     init {
+        println("inside init block")
         viewModelScope.launch {
             categoryRepo.getAllCategoriesFlow().collect {
                 categories = it
@@ -31,7 +34,6 @@ class CategoriesScreenViewModel(private val categoryRepo: CategoryRepository) : 
             }
         }
     }
-
 
     fun changeChosenCategory(category: Category) {
         if (allCategoriesChosen) {
@@ -53,7 +55,29 @@ class CategoriesScreenViewModel(private val categoryRepo: CategoryRepository) : 
         }
     }
 
+    fun changeTextFieldValue(newValue: String) {
+        _uiState.update { it.copy(addCategoryName = newValue) }
+    }
+
+    fun showDialog() {
+        _uiState.update { it.copy(dialogShown = true) }
+    }
+
+    fun dismissDialog() {
+        _uiState.update { it.copy(dialogShown = false) }
+    }
+
+    fun saveCategory() {
+        viewModelScope.launch {
+            categoryRepo.saveCategory(_uiState.value.toCategory())
+        }
+    }
+
 }
+
+private fun CategoriesScreenUIState.toCategory() = Category(name = addCategoryName)
+
+
 
 private fun List<Category>.equalsWithoutOrder(categories: List<Category>): Boolean {
     if (this == categories) return true
