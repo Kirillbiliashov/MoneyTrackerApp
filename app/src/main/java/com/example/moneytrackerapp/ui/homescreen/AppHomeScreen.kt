@@ -93,7 +93,10 @@ fun HomeScreenContent(modifier: Modifier = Modifier) {
     }
     DatesHeader(viewModel = viewModel)
     Spacer(modifier = Modifier.height(40.dp))
-    Text(text = "$${expenseSum}", style = MaterialTheme.typography.displayLarge)
+    Text(
+        text = "$${String.format("%.2f", expenseSum)}",
+        style = MaterialTheme.typography.displayLarge
+    )
     Spacer(modifier = Modifier.height(40.dp))
     ExpensesList(expenses = expenses, modifier = modifier)
     HomeScreenButtons(
@@ -140,7 +143,7 @@ fun CalendarDropdown(viewModel: HomeScreenViewModel, modifier: Modifier = Modifi
     val uiState = viewModel.uiState.collectAsState()
     Box(modifier = Modifier.padding(end = 8.dp)) {
         Text(
-            text = uiState.value.calendarOption.toString(),
+            text = uiState.value.calendarOption.toString().lowercase(1),
             modifier = modifier.clickable(onClick = { viewModel.expandDropdown() }),
             style = MaterialTheme.typography.displayMedium
         )
@@ -198,7 +201,7 @@ fun DropdownMenuOptions(
     onItemClick: (Int) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val options = CalendarOption.values().map { it.toString() }.toList()
+    val options = CalendarOption.values().map { it.toString().lowercase(1) }.toList()
     options.forEachIndexed { index, s ->
         DropdownMenuItem(text = { Text(text = s) },
             onClick = { onItemClick(index) })
@@ -296,3 +299,6 @@ fun ExpenseCard(expense: ExpenseTuple, modifier: Modifier = Modifier) {
         }
     }
 }
+
+private fun String.lowercase(startIdx: Int) =
+    "${this.substring(0, startIdx)}${this.substring(startIdx).lowercase()}"

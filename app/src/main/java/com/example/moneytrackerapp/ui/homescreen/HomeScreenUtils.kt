@@ -27,12 +27,12 @@ object HomeScreenUtils {
         val endDate = LocalDate.of(2023, 12, 31)
         val monday = TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY)
         var currDate = LocalDate.of(2020, 1, 1).with(monday)
-        var nextDate = currDate.plusWeeks(1)
+        var nextDate = currDate.plusWeeks(1).minusDays(1)
         val weeksList = mutableListOf<String>()
         while (currDate <= endDate) {
             val str = getWeekStr(currDate, nextDate)
             weeksList.add(str)
-            currDate = nextDate
+            currDate = nextDate.plusDays(1)
             nextDate = nextDate.plusWeeks(1)
         }
         return weeksList
