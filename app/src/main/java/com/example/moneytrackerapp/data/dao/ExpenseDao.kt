@@ -1,6 +1,7 @@
 package com.example.moneytrackerapp.data.dao
 
 import androidx.room.Dao
+import androidx.room.Insert
 import androidx.room.Query
 import com.example.moneytrackerapp.data.entity.Expense
 import com.example.moneytrackerapp.data.entity.ExpenseTuple
@@ -15,5 +16,8 @@ interface ExpenseDao {
                 "category_id = category.id"
     )
     fun getAllByDate(): Flow<List<ExpenseTuple>>
+
+    @Insert(entity = Expense::class)
+    suspend fun saveExpense(expense: Expense)
 
 }

@@ -36,6 +36,7 @@ class HomeScreenViewModel(private val expenseRepository: ExpenseRepository) : Vi
     private var expenses: List<ExpenseTuple> = listOf()
 
     init {
+        println("inside view model init")
         viewModelScope.launch {
             expenseRepository.getAllExpensesFlow()
                 .collect {

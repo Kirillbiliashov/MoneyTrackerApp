@@ -15,7 +15,10 @@ object ViewModelProvider {
             HomeScreenViewModel(moneyTrackerApp().container.expenseRepository)
         }
         initializer {
-            ExpenseScreenViewModel(moneyTrackerApp().container.categoryRepository)
+            ExpenseScreenViewModel(
+                categoryRepo = moneyTrackerApp().container.categoryRepository,
+                expenseRepo = moneyTrackerApp().container.expenseRepository
+            )
         }
         initializer {
             CategoriesScreenViewModel(moneyTrackerApp().container.categoryRepository)

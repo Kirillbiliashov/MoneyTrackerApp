@@ -25,6 +25,7 @@ import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.moneytrackerapp.data.entity.Category
 import com.example.moneytrackerapp.ui.ViewModelProvider
 
 @Composable
@@ -60,8 +61,12 @@ fun AddExpenseForm(onSaveClick: () -> Unit, modifier: Modifier = Modifier) {
         value = uiState.value.note ?: "",
         onValueChange = viewModel::updateExpenseNote,
         label = { Text(text = "Note") },
-        modifier = modifier.padding(vertical = 8.dp))
-    Button(onClick = onSaveClick, modifier = modifier.padding(top = 8.dp)) {
+        modifier = modifier.padding(vertical = 8.dp)
+    )
+    Button(onClick = {
+        viewModel.saveExpense()
+        onSaveClick()
+    }, modifier = modifier.padding(top = 8.dp)) {
         Text(text = "Save")
     }
 }
@@ -88,7 +93,7 @@ fun CategoryDropdown(
             viewModel.categories.forEach {
                 DropdownMenuItem(
                     text = { Text(text = it.name) },
-                    onClick = { viewModel.updateExpenseCategory(it.name) }
+                    onClick = { viewModel.updateExpenseCategory(it) }
                 )
             }
         }
@@ -97,13 +102,13 @@ fun CategoryDropdown(
 
 @Composable
 fun DropdownTextField(
-    expanded: Boolean, category: String?, onIconClick: () -> Unit,
+    expanded: Boolean, category: Category?, onIconClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     val imageVector = if (expanded) Icons.Default.KeyboardArrowUp
     else Icons.Default.KeyboardArrowDown
     OutlinedTextField(
-        value = category ?: "Select category",
+        value = category?.name ?: "Select category",
         readOnly = true,
         trailingIcon = {
             Icon(

@@ -70,6 +70,7 @@ fun HomeScreenContent(modifier: Modifier = Modifier) {
         visible = uiState.value.expenseSheetDisplayed,
         onHideSheet = viewModel::hideExpenseSheet
     ) {
+
         ExpenseSheetContent(onSaveClick = viewModel::hideExpenseSheet)
     }
     SheetContent(
