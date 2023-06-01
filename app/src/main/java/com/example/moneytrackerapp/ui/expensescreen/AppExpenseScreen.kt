@@ -3,10 +3,8 @@ package com.example.moneytrackerapp.ui.expensescreen
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
@@ -27,7 +25,7 @@ import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
-import com.example.moneytrackerapp.Datasource
+import com.example.moneytrackerapp.ui.ViewModelProvider
 
 @Composable
 fun ExpenseSheetContent(onSaveClick: () -> Unit, modifier: Modifier = Modifier) {
@@ -41,7 +39,7 @@ fun ExpenseSheetContent(onSaveClick: () -> Unit, modifier: Modifier = Modifier) 
 
 @Composable
 fun AddExpenseForm(onSaveClick: () -> Unit, modifier: Modifier = Modifier) {
-    val viewModel: ExpenseScreenViewModel = viewModel()
+    val viewModel: ExpenseScreenViewModel = viewModel(factory = ViewModelProvider.Factory)
     val uiState = viewModel.uiState.collectAsState()
     Text(text = "Add expense", fontSize = 32.sp, modifier = modifier.padding(vertical = 16.dp))
     OutlinedTextField(
@@ -87,10 +85,10 @@ fun CategoryDropdown(
             onDismissRequest = viewModel::hideDropdownOptions,
             modifier = modifier.fillMaxWidth(0.68f)
         ) {
-            Datasource.categories.forEach {
+            viewModel.categories.forEach {
                 DropdownMenuItem(
-                    text = { Text(text = it) },
-                    onClick = { viewModel.updateExpenseCategory(it) }
+                    text = { Text(text = it.name) },
+                    onClick = { viewModel.updateExpenseCategory(it.name) }
                 )
             }
         }

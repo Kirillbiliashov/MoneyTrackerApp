@@ -21,14 +21,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
-import com.example.moneytrackerapp.Datasource
+import com.example.moneytrackerapp.ui.ViewModelProvider
 
 @Composable
 fun CategoriesSheetContent(onButtonClick: () -> Unit, modifier: Modifier = Modifier) {
-    val viewModel: CategoriesScreenViewModel = viewModel()
+    val viewModel: CategoriesScreenViewModel = viewModel(factory = ViewModelProvider.Factory)
     val uiState = viewModel.uiState.collectAsState()
     val chosenCategories = uiState.value.chosenCategories
-    val categories = Datasource.categories
     val allCategoriesChosen = viewModel.allCategoriesChosen
     Column(
         modifier = Modifier
@@ -38,13 +37,13 @@ fun CategoriesSheetContent(onButtonClick: () -> Unit, modifier: Modifier = Modif
     ) {
         AllCategoriesOption(allCategoriesChosen = allCategoriesChosen)
         LazyColumn {
-            items(items = categories) {
+            items(items = viewModel.categories) {
                 Row(
                     modifier = modifier
                         .clickable(onClick = { viewModel.changeChosenCategory(it) })
                         .padding(8.dp)
                 ) {
-                    Text(text = it, fontSize = 18.sp)
+                    Text(text = it.name, fontSize = 18.sp)
                     Spacer(modifier = modifier.weight(1f))
                     if (!allCategoriesChosen && chosenCategories.contains(it)) {
                         Icon(imageVector = Icons.Default.Check, contentDescription = null)
