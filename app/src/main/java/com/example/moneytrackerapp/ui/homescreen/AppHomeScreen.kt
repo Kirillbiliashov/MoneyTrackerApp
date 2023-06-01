@@ -2,6 +2,7 @@ package com.example.moneytrackerapp.ui.homescreen
 
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -9,6 +10,8 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.defaultMinSize
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -46,6 +49,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.CompositingStrategy
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -285,22 +289,34 @@ fun ExpenseCard(expense: ExpenseTuple, modifier: Modifier = Modifier) {
     Card(
         modifier = Modifier
             .padding(vertical = 8.dp, horizontal = 4.dp)
-            .height(64.dp),
+            .defaultMinSize(minHeight = 64.dp),
         shape = RoundedCornerShape(8.dp),
         elevation = CardDefaults.cardElevation(
             defaultElevation = 2.dp
         )
     ) {
-        Row(
-            modifier = modifier
-                .fillMaxSize()
-                .padding(8.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Text(text = expense.name, fontSize = 18.sp)
-            Spacer(modifier = modifier.weight(1F))
-            Text(text = expense.sum.toString(), fontSize = 18.sp)
+        Spacer(modifier = modifier.weight(1F))
+        Column(modifier = Modifier
+            .fillMaxSize()
+            .padding(8.dp)) {
+            Row(
+                modifier = modifier
+                    .fillMaxSize(),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(text = expense.name, fontSize = 18.sp)
+                Spacer(modifier = modifier.weight(1F))
+                Text(text = expense.sum.toString(), fontSize = 18.sp)
+            }
+            if (expense.note != null) {
+                Text(
+                    text = expense.note,
+                    fontWeight = FontWeight.W100,
+                    modifier = modifier.padding(top = 4.dp)
+                )
+            }
         }
+        Spacer(modifier = modifier.weight(1F))
     }
 }
 
