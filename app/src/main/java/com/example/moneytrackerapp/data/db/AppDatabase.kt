@@ -6,15 +6,18 @@ import androidx.room.Room
 import androidx.room.RoomDatabase
 import com.example.moneytrackerapp.data.dao.CategoryDao
 import com.example.moneytrackerapp.data.dao.ExpenseDao
+import com.example.moneytrackerapp.data.dao.LimitDao
 import com.example.moneytrackerapp.data.entity.Category
 import com.example.moneytrackerapp.data.entity.Expense
+import com.example.moneytrackerapp.data.entity.Limit
 
 
-@Database(version = 4, entities = [Category::class, Expense::class])
+@Database(version = 6, entities = [Category::class, Expense::class, Limit::class])
 abstract class AppDatabase : RoomDatabase() {
 
     abstract fun getCategoryDao(): CategoryDao
     abstract fun getExpenseDao(): ExpenseDao
+    abstract fun getLimitDao(): LimitDao
 
     companion object {
         @Volatile

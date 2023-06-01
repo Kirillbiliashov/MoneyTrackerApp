@@ -8,6 +8,7 @@ import com.example.moneytrackerapp.MoneyTrackerApplication
 import com.example.moneytrackerapp.ui.categoriesscreen.CategoriesScreenViewModel
 import com.example.moneytrackerapp.ui.expensescreen.ExpenseScreenViewModel
 import com.example.moneytrackerapp.ui.homescreen.HomeScreenViewModel
+import com.example.moneytrackerapp.ui.settingsscreen.SettingsScreenViewModel
 
 object ViewModelProvider {
     val Factory = viewModelFactory {
@@ -22,6 +23,9 @@ object ViewModelProvider {
         }
         initializer {
             CategoriesScreenViewModel(moneyTrackerApp().container.categoryRepository)
+        }
+        initializer {
+            SettingsScreenViewModel(moneyTrackerApp().container.limitRepository)
         }
     }
 }

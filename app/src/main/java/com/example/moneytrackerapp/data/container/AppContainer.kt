@@ -6,10 +6,13 @@ import com.example.moneytrackerapp.data.repo.CategoryRepository
 import com.example.moneytrackerapp.data.repo.CategoryRepositoryImpl
 import com.example.moneytrackerapp.data.repo.ExpenseRepository
 import com.example.moneytrackerapp.data.repo.ExpenseRepositoryImpl
+import com.example.moneytrackerapp.data.repo.LimitRepository
+import com.example.moneytrackerapp.data.repo.LimitRepositoryImpl
 
 interface AppContainer {
     val expenseRepository: ExpenseRepository
     val categoryRepository: CategoryRepository
+    val limitRepository: LimitRepository
 }
 
 class AppDataContainer(private val context: Context) : AppContainer {
@@ -20,6 +23,10 @@ class AppDataContainer(private val context: Context) : AppContainer {
 
     override val categoryRepository: CategoryRepository by lazy {
         CategoryRepositoryImpl(AppDatabase.getDatabase(context).getCategoryDao())
+    }
+
+    override val limitRepository: LimitRepository by lazy {
+        LimitRepositoryImpl(AppDatabase.getDatabase(context).getLimitDao())
     }
 
 }
