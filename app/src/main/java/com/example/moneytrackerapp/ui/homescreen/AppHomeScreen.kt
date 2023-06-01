@@ -59,15 +59,15 @@ import com.example.moneytrackerapp.ui.ViewModelProvider
 import com.example.moneytrackerapp.ui.categoriesscreen.CategoriesScreenViewModel
 import com.example.moneytrackerapp.ui.categoriesscreen.CategoriesSheetContent
 import com.example.moneytrackerapp.ui.expensescreen.ExpenseSheetContent
+import com.example.moneytrackerapp.ui.settingsscreen.SettingsSheetContent
 import com.maxkeppeker.sheets.core.models.base.rememberSheetState
 import com.maxkeppeler.sheets.calendar.CalendarDialog
 import com.maxkeppeler.sheets.calendar.models.CalendarSelection
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun HomeScreenContent(modifier: Modifier = Modifier) {
+fun HomeScreenContent(viewModel: HomeScreenViewModel, modifier: Modifier = Modifier) {
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
-    val viewModel: HomeScreenViewModel = viewModel(factory = ViewModelProvider.Factory)
     val categoriesViewModel: CategoriesScreenViewModel =
         viewModel(factory = ViewModelProvider.Factory)
     val categoriesUiState = categoriesViewModel.uiState.collectAsState()
@@ -93,6 +93,13 @@ fun HomeScreenContent(modifier: Modifier = Modifier) {
             onButtonClick = viewModel::hideCategoriesSheet
         )
     }
+    SheetContent(
+        sheetState = sheetState,
+        visible = uiState.value.settingsSheetDisplayed,
+        onHideSheet = viewModel::hideSettingsSheet
+    ) {
+        SettingsSheetContent(onButtonClick = viewModel::hideSettingsSheet)
+    }
     DatesHeader(viewModel = viewModel)
     Spacer(modifier = Modifier.height(40.dp))
     Text(
@@ -100,8 +107,7 @@ fun HomeScreenContent(modifier: Modifier = Modifier) {
         style = MaterialTheme.typography.displayLarge
     )
     Spacer(modifier = Modifier.height(40.dp))
-    ExpensesList(expenses = expenses,
-        modifier = modifier)
+    ExpensesList(expenses = expenses, modifier = modifier)
     HomeScreenButtons(
         onShowCategoriesSheet = viewModel::displayCategoriesSheet,
         onShowEditSheet = viewModel::displayExpenseSheet

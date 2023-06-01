@@ -1,15 +1,11 @@
 package com.example.moneytrackerapp.ui.homescreen
 
-import androidx.compose.runtime.collectAsState
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.moneytrackerapp.data.entity.ExpenseTuple
 import com.example.moneytrackerapp.data.repo.ExpenseRepository
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import java.time.LocalDate
@@ -22,7 +18,8 @@ data class HomeScreenUIState(
     val calendarOption: CalendarOption = CalendarOption.DAILY,
     val chosenDate: String = HomeScreenUtils.getCurrentDay(),
     val expenseSheetDisplayed: Boolean = false,
-    val categoriesSheetDisplayed: Boolean = false
+    val categoriesSheetDisplayed: Boolean = false,
+    val settingsSheetDisplayed: Boolean = false
 ) {
     val chosenDateIdx: Int
         get() = calendarOption.datesList.indexOf(chosenDate)
@@ -109,5 +106,14 @@ class HomeScreenViewModel(private val expenseRepository: ExpenseRepository) : Vi
     fun hideCategoriesSheet() {
         _uiState.update { it.copy(categoriesSheetDisplayed = false) }
     }
+
+    fun displaySettingsSheet() {
+        _uiState.update { it.copy(settingsSheetDisplayed = true) }
+    }
+
+    fun hideSettingsSheet() {
+        _uiState.update { it.copy(settingsSheetDisplayed = false) }
+    }
+
 
 }

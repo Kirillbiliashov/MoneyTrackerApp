@@ -3,10 +3,18 @@ package com.example.moneytrackerapp
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.compose.foundation.border
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
@@ -15,9 +23,14 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.moneytrackerapp.ui.ViewModelProvider
 import com.example.moneytrackerapp.ui.homescreen.HomeScreenContent
+import com.example.moneytrackerapp.ui.homescreen.HomeScreenViewModel
 import com.example.moneytrackerapp.ui.theme.MoneyTrackerAppTheme
 
 class MainActivity : ComponentActivity() {
@@ -40,13 +53,20 @@ class MainActivity : ComponentActivity() {
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MoneyTrackerApp(modifier: Modifier = Modifier) {
+    val viewModel: HomeScreenViewModel = viewModel(factory = ViewModelProvider.Factory)
     Scaffold(topBar = {
         TopAppBar(title = {
-            Text(
-                text = "Money Tracker",
-                style = MaterialTheme.typography.displayLarge,
-                fontSize = 32.sp
-            )
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(
+                    text = "Money Tracker",
+                    style = MaterialTheme.typography.displayLarge,
+                    fontSize = 32.sp
+                )
+                Spacer(modifier = modifier.weight(1f))
+                IconButton(onClick = viewModel::displaySettingsSheet) {
+                    Icon(imageVector = Icons.Default.Settings, contentDescription = null)
+                }
+            }
         })
     }) {
         Column(
@@ -55,11 +75,8 @@ fun MoneyTrackerApp(modifier: Modifier = Modifier) {
                 .padding(it),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
-            HomeScreenContent(
-                modifier = modifier.weight(1f)
-            )
+            HomeScreenContent(viewModel = viewModel, modifier = modifier.weight(1f))
         }
-
     }
 }
 
