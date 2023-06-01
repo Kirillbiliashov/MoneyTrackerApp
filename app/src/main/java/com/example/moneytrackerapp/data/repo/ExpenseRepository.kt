@@ -9,17 +9,15 @@ import java.time.LocalTime
 import java.time.ZoneId
 
 interface ExpenseRepository {
-    fun getExpensesByDate(date: LocalDate): Flow<List<ExpenseTuple>>
+    fun getExpensesByDate(range: Pair<LocalDateTime, LocalDateTime>): Flow<List<ExpenseTuple>>
 }
 
 
 class ExpenseRepositoryImpl(private val expenseDao: ExpenseDao) : ExpenseRepository {
 
-    override fun getExpensesByDate(date: LocalDate): Flow<List<ExpenseTuple>> {
-        val startOfDay = LocalDateTime.of(date, LocalTime.MIN)
-        val endOfDay = LocalDateTime.of(date, LocalTime.MAX)
-        val startDate = startOfDay.atZone(ZoneId.systemDefault()).toInstant().toEpochMilli()
-        val endDate = endOfDay.atZone(ZoneId.systemDefault()).toInstant().toEpochMilli()
+    override fun getExpensesByDate(range: Pair<LocalDateTime, LocalDateTime>): Flow<List<ExpenseTuple>> {
+        val startDate = range.first.atZone(ZoneId.systemDefault()).toInstant().toEpochMilli()
+        val endDate = range.second.atZone(ZoneId.systemDefault()).toInstant().toEpochMilli()
         return expenseDao.getAllByDate(startDate, endDate)
     }
 

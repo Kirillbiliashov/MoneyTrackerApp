@@ -8,8 +8,8 @@ import java.util.Calendar
 
 object HomeScreenUtils {
 
-    private val MONTH_FORMATTER = DateTimeFormatter.ofPattern("MMM\nyyyy")
-    private val DAY_FORMATTER = DateTimeFormatter.ofPattern("dd.MM")
+     private val MONTH_FORMATTER = DateTimeFormatter.ofPattern("MMM\nyyyy")
+     private val DAY_FORMATTER = DateTimeFormatter.ofPattern("dd.MM")
 
     fun getDaysList(): List<String> {
         val calendar = Calendar.getInstance()

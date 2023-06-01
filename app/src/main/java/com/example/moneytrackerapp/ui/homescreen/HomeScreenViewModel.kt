@@ -15,11 +15,15 @@ import java.time.format.DateTimeFormatter
 
 data class HomeScreenUIState(
     val dropdownExpanded: Boolean = false,
-    val calendarTypeIdx: Int = 0,
+    val calendarOption: CalendarOption = CalendarOption.DAILY,
     val chosenDate: String = HomeScreenUtils.getCurrentDay(),
     val expenseSheetDisplayed: Boolean = false,
     val categoriesSheetDisplayed: Boolean = false
-)
+) {
+    val chosenDateIdx: Int
+        get() = calendarOption.datesList.indexOf(chosenDate)
+}
+
 
 data class HomeScreenDataState(
     val expenses: List<ExpenseTuple> = listOf()
@@ -29,27 +33,17 @@ class HomeScreenViewModel(private val expenseRepository: ExpenseRepository) : Vi
 
     private var _uiState = MutableStateFlow(HomeScreenUIState())
     val uiState: StateFlow<HomeScreenUIState> = _uiState
-    val uiDataState: StateFlow<HomeScreenDataState>
-    val calendarOptions = listOf("Daily", "Monthly", "Weekly")
-    val currentCalendarOption: String
-        get() = calendarOptions[_uiState.value.calendarTypeIdx]
-
-    val chosenDateIdx: Int
-        get() = dateItems.indexOf(uiState.value.chosenDate)
-
-    val dateItems: List<String>
-        get() = when (currentCalendarOption) {
-            "Monthly" -> HomeScreenUtils.getMonthsList()
-            "Weekly" -> HomeScreenUtils.getWeeksList()
-            else -> HomeScreenUtils.getDaysList()
-        }
+    lateinit var uiDataState: StateFlow<HomeScreenDataState>
 
     init {
-        uiDataState = expenseRepository.getExpensesByDate(LocalDate.now())
-            .map {
-                println("size of result is ${it.size}")
-                HomeScreenDataState(it)
-            }
+        loadUIData()
+    }
+
+    private fun loadUIData() {
+        val chosenDate = uiState.value.chosenDate
+        val chosenDateRange = uiState.value.calendarOption.parseDateStr(chosenDate)
+        uiDataState = expenseRepository.getExpensesByDate(chosenDateRange)
+            .map { HomeScreenDataState(it) }
             .stateIn(
                 scope = viewModelScope,
                 started = SharingStarted.WhileSubscribed(TIMEOUT_MILLIS),
@@ -58,15 +52,12 @@ class HomeScreenViewModel(private val expenseRepository: ExpenseRepository) : Vi
     }
 
     fun changeDropdownOption(newIdx: Int) {
+        val newCalendarOption = CalendarOption.values()[newIdx]
         _uiState.update {
             it.copy(
-                calendarTypeIdx = newIdx,
+                calendarOption = newCalendarOption,
                 dropdownExpanded = false,
-                chosenDate = when (newIdx) {
-                    1 -> HomeScreenUtils.getCurrentMonth()
-                    2 -> HomeScreenUtils.getCurrentWeek()
-                    else -> HomeScreenUtils.getCurrentDay()
-                }
+                chosenDate = newCalendarOption.currentDate
             )
         }
     }
@@ -80,7 +71,9 @@ class HomeScreenViewModel(private val expenseRepository: ExpenseRepository) : Vi
     }
 
     fun updateChosenDate(newDate: String) {
+        println("new date: $newDate")
         _uiState.update { it.copy(chosenDate = newDate) }
+        loadUIData()
     }
 
     fun updateChosenDate(localDate: LocalDate) {
@@ -88,7 +81,7 @@ class HomeScreenViewModel(private val expenseRepository: ExpenseRepository) : Vi
         _uiState.update {
             it.copy(
                 chosenDate = localDate.format(formatter),
-                calendarTypeIdx = 0
+                calendarOption = CalendarOption.DAILY
             )
         }
     }

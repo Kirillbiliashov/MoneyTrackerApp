@@ -75,21 +75,27 @@ fun HomeScreenContent(modifier: Modifier = Modifier) {
     val viewModel: HomeScreenViewModel = viewModel(factory = ViewModelProvider.Factory)
     val uiState = viewModel.uiState.collectAsState()
     val uiDataState = viewModel.uiDataState.collectAsState()
-    SheetContent(sheetState = sheetState,
+    val expenses = uiDataState.value.expenses
+    val expenseSum = expenses.fold(0.00) { acc, value -> acc + value.sum }
+    SheetContent(
+        sheetState = sheetState,
         visible = uiState.value.expenseSheetDisplayed,
-        onHideSheet = viewModel::hideExpenseSheet) {
+        onHideSheet = viewModel::hideExpenseSheet
+    ) {
         ExpenseSheetContent(onSaveClick = viewModel::hideExpenseSheet)
     }
-    SheetContent(sheetState = sheetState,
+    SheetContent(
+        sheetState = sheetState,
         visible = uiState.value.categoriesSheetDisplayed,
-        onHideSheet = viewModel::hideCategoriesSheet) {
+        onHideSheet = viewModel::hideCategoriesSheet
+    ) {
         CategoriesSheetContent(onButtonClick = viewModel::hideCategoriesSheet)
     }
     DatesHeader(viewModel = viewModel)
     Spacer(modifier = Modifier.height(40.dp))
-    Text(text = "$0.00", style = MaterialTheme.typography.displayLarge)
+    Text(text = "$${expenseSum}", style = MaterialTheme.typography.displayLarge)
     Spacer(modifier = Modifier.height(40.dp))
-    ExpensesList(expenses = uiDataState.value.expenses, modifier = modifier)
+    ExpensesList(expenses = expenses, modifier = modifier)
     HomeScreenButtons(
         onShowCategoriesSheet = viewModel::displayCategoriesSheet,
         onShowEditSheet = viewModel::displayExpenseSheet
@@ -134,7 +140,7 @@ fun CalendarDropdown(viewModel: HomeScreenViewModel, modifier: Modifier = Modifi
     val uiState = viewModel.uiState.collectAsState()
     Box(modifier = Modifier.padding(end = 8.dp)) {
         Text(
-            text = viewModel.currentCalendarOption,
+            text = uiState.value.calendarOption.toString(),
             modifier = modifier.clickable(onClick = { viewModel.expandDropdown() }),
             style = MaterialTheme.typography.displayMedium
         )
@@ -143,9 +149,7 @@ fun CalendarDropdown(viewModel: HomeScreenViewModel, modifier: Modifier = Modifi
             onDismissRequest = { viewModel.dismissDropdown() },
             modifier = Modifier.fillMaxWidth(0.3f)
         ) {
-            DropdownMenuOptions(
-                options = viewModel.calendarOptions,
-                onItemClick = { viewModel.changeDropdownOption(it) })
+            DropdownMenuOptions(onItemClick = { viewModel.changeDropdownOption(it) })
         }
     }
 }
@@ -154,13 +158,12 @@ fun CalendarDropdown(viewModel: HomeScreenViewModel, modifier: Modifier = Modifi
 fun DateItems(viewModel: HomeScreenViewModel, modifier: Modifier = Modifier) {
     val uiState = viewModel.uiState.collectAsState()
     val listState = rememberLazyListState(
-        initialFirstVisibleItemIndex = viewModel.chosenDateIdx - 3
+        initialFirstVisibleItemIndex = uiState.value.chosenDateIdx - 3
     )
     LazyRow(
         state = listState,
         modifier = modifier
             .fillMaxWidth()
-            .border(2.dp, Color.Red)
             .height(50.dp)
             .graphicsLayer(compositingStrategy = CompositingStrategy.Offscreen)
             .drawWithContent {
@@ -175,7 +178,7 @@ fun DateItems(viewModel: HomeScreenViewModel, modifier: Modifier = Modifier) {
             },
         verticalAlignment = Alignment.CenterVertically
     ) {
-        items(items = viewModel.dateItems) { item ->
+        items(items = uiState.value.calendarOption.datesList) { item ->
             val color = if (item == uiState.value.chosenDate)
                 MaterialTheme.colorScheme.inversePrimary
             else Color.Transparent
@@ -192,10 +195,10 @@ fun DateItems(viewModel: HomeScreenViewModel, modifier: Modifier = Modifier) {
 
 @Composable
 fun DropdownMenuOptions(
-    options: List<String>,
     onItemClick: (Int) -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val options = CalendarOption.values().map { it.toString() }.toList()
     options.forEachIndexed { index, s ->
         DropdownMenuItem(text = { Text(text = s) },
             onClick = { onItemClick(index) })
@@ -204,9 +207,7 @@ fun DropdownMenuOptions(
 
 @Composable
 fun ExpensesList(expenses: List<ExpenseTuple>, modifier: Modifier = Modifier) {
-    println("expenses size: ${expenses.size}")
     val categoryExpensesMap = expenses.groupBy { it.categoryName }
-    println(categoryExpensesMap)
     LazyColumn(
         modifier = modifier
             .fillMaxWidth()
@@ -234,6 +235,7 @@ fun ExpensesList(expenses: List<ExpenseTuple>, modifier: Modifier = Modifier) {
             }
         }
     }
+
 }
 
 @Composable
