@@ -10,7 +10,7 @@ import com.example.moneytrackerapp.data.entity.Category
 import com.example.moneytrackerapp.data.entity.Expense
 
 
-@Database(version = 3, entities = [Category::class, Expense::class])
+@Database(version = 4, entities = [Category::class, Expense::class])
 abstract class AppDatabase : RoomDatabase() {
 
     abstract fun getCategoryDao(): CategoryDao
