@@ -74,8 +74,7 @@ fun HomeScreenContent(modifier: Modifier = Modifier) {
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     val viewModel: HomeScreenViewModel = viewModel(factory = ViewModelProvider.Factory)
     val uiState = viewModel.uiState.collectAsState()
-    val uiDataState = viewModel.uiDataState.collectAsState()
-    val expenses = uiDataState.value.expenses
+    val expenses = uiState.value.displayExpenses
     val expenseSum = expenses.fold(0.00) { acc, value -> acc + value.sum }
     SheetContent(
         sheetState = sheetState,

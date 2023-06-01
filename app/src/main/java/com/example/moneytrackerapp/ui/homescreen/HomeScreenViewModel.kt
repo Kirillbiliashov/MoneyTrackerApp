@@ -1,5 +1,6 @@
 package com.example.moneytrackerapp.ui.homescreen
 
+import androidx.compose.runtime.collectAsState
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.moneytrackerapp.data.entity.ExpenseTuple
@@ -10,11 +11,14 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.launch
 import java.time.LocalDate
+import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 
 data class HomeScreenUIState(
     val dropdownExpanded: Boolean = false,
+    val displayExpenses: List<ExpenseTuple> = listOf(),
     val calendarOption: CalendarOption = CalendarOption.DAILY,
     val chosenDate: String = HomeScreenUtils.getCurrentDay(),
     val expenseSheetDisplayed: Boolean = false,
@@ -25,30 +29,33 @@ data class HomeScreenUIState(
 }
 
 
-data class HomeScreenDataState(
-    val expenses: List<ExpenseTuple> = listOf()
-)
-
 class HomeScreenViewModel(private val expenseRepository: ExpenseRepository) : ViewModel() {
 
     private var _uiState = MutableStateFlow(HomeScreenUIState())
     val uiState: StateFlow<HomeScreenUIState> = _uiState
-    lateinit var uiDataState: StateFlow<HomeScreenDataState>
+    private var expenses: List<ExpenseTuple> = listOf()
 
     init {
-        loadUIData()
+        viewModelScope.launch {
+            expenseRepository.getAllExpensesFlow()
+                .collect {
+                    expenses = it
+                    updateUIStateExpenses()
+                }
+        }
     }
 
-    private fun loadUIData() {
+    private fun updateUIStateExpenses() {
         val chosenDate = uiState.value.chosenDate
-        val chosenDateRange = uiState.value.calendarOption.parseDateStr(chosenDate)
-        uiDataState = expenseRepository.getExpensesByDate(chosenDateRange)
-            .map { HomeScreenDataState(it) }
-            .stateIn(
-                scope = viewModelScope,
-                started = SharingStarted.WhileSubscribed(TIMEOUT_MILLIS),
-                initialValue = HomeScreenDataState()
-            )
+        val dateRange = uiState.value.calendarOption.parseDateStr(chosenDate)
+        val zone = ZoneId.systemDefault()
+        val startDate = dateRange.first.atZone(zone).toInstant().toEpochMilli()
+        val endDate = dateRange.second.atZone(zone).toInstant().toEpochMilli()
+        val displayExpenses = expenses
+            .filter { expense -> expense.date in startDate..endDate }
+        _uiState.update {
+            it.copy(displayExpenses = displayExpenses)
+        }
     }
 
     fun changeDropdownOption(newIdx: Int) {
@@ -71,9 +78,8 @@ class HomeScreenViewModel(private val expenseRepository: ExpenseRepository) : Vi
     }
 
     fun updateChosenDate(newDate: String) {
-        println("new date: $newDate")
         _uiState.update { it.copy(chosenDate = newDate) }
-        loadUIData()
+        updateUIStateExpenses()
     }
 
     fun updateChosenDate(localDate: LocalDate) {
@@ -84,6 +90,7 @@ class HomeScreenViewModel(private val expenseRepository: ExpenseRepository) : Vi
                 calendarOption = CalendarOption.DAILY
             )
         }
+        updateUIStateExpenses()
     }
 
     fun displayExpenseSheet() {
@@ -100,10 +107,6 @@ class HomeScreenViewModel(private val expenseRepository: ExpenseRepository) : Vi
 
     fun hideCategoriesSheet() {
         _uiState.update { it.copy(categoriesSheetDisplayed = false) }
-    }
-
-    companion object {
-        private const val TIMEOUT_MILLIS = 5_000L
     }
 
 }

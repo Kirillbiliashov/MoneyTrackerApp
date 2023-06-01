@@ -12,8 +12,8 @@ interface ExpenseDao {
     @Query(
         "SELECT expense.id AS id, expense.name AS name, sum, date, note, " +
                 "category.name AS category_name FROM expense JOIN category ON " +
-                "category_id = category.id WHERE date BETWEEN :startDate AND :endDate"
+                "category_id = category.id"
     )
-    fun getAllByDate(startDate: Long, endDate: Long): Flow<List<ExpenseTuple>>
+    fun getAllByDate(): Flow<List<ExpenseTuple>>
 
 }
