@@ -24,8 +24,8 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.moneytrackerapp.ui.ViewModelProvider
 
 @Composable
-fun CategoriesSheetContent(onButtonClick: () -> Unit, modifier: Modifier = Modifier) {
-    val viewModel: CategoriesScreenViewModel = viewModel(factory = ViewModelProvider.Factory)
+fun CategoriesSheetContent(viewModel: CategoriesScreenViewModel,
+    onButtonClick: () -> Unit, modifier: Modifier = Modifier) {
     val uiState = viewModel.uiState.collectAsState()
     val chosenCategories = uiState.value.chosenCategories
     val allCategoriesChosen = viewModel.allCategoriesChosen

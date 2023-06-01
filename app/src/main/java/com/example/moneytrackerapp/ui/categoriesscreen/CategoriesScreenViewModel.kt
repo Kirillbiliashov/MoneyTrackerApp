@@ -18,10 +18,10 @@ class CategoriesScreenViewModel(private val categoryRepo: CategoryRepository) : 
     private var _uiState = MutableStateFlow(CategoriesScreenUIState())
     val uiState: StateFlow<CategoriesScreenUIState> = _uiState
     val allCategoriesChosen: Boolean
-        get() = _uiState.value.chosenCategories == categories
+        get() = _uiState.value.chosenCategories.equalsWithoutOrder(categories)
 
-     var categories: List<Category> = listOf()
-    private set
+    var categories: List<Category> = listOf()
+        private set
 
     init {
         viewModelScope.launch {
@@ -53,4 +53,11 @@ class CategoriesScreenViewModel(private val categoryRepo: CategoryRepository) : 
         }
     }
 
+}
+
+private fun List<Category>.equalsWithoutOrder(categories: List<Category>): Boolean {
+    if (this == categories) return true
+    if (this.size != categories.size) return false
+    forEach { if (!categories.contains(it)) return false }
+    return true
 }

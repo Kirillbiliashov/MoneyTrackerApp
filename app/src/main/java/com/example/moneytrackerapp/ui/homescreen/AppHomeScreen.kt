@@ -49,8 +49,10 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.moneytrackerapp.data.entity.Category
 import com.example.moneytrackerapp.data.entity.ExpenseTuple
 import com.example.moneytrackerapp.ui.ViewModelProvider
+import com.example.moneytrackerapp.ui.categoriesscreen.CategoriesScreenViewModel
 import com.example.moneytrackerapp.ui.categoriesscreen.CategoriesSheetContent
 import com.example.moneytrackerapp.ui.expensescreen.ExpenseSheetContent
 import com.maxkeppeker.sheets.core.models.base.rememberSheetState
@@ -62,15 +64,19 @@ import com.maxkeppeler.sheets.calendar.models.CalendarSelection
 fun HomeScreenContent(modifier: Modifier = Modifier) {
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     val viewModel: HomeScreenViewModel = viewModel(factory = ViewModelProvider.Factory)
+    val categoriesViewModel: CategoriesScreenViewModel =
+        viewModel(factory = ViewModelProvider.Factory)
+    val categoriesUiState = categoriesViewModel.uiState.collectAsState()
+    val chosenCategories = categoriesUiState.value.chosenCategories
     val uiState = viewModel.uiState.collectAsState()
-    val expenses = uiState.value.displayExpenses
+    val expenses =
+        uiState.value.displayExpenses.filterByCategories(chosenCategories)
     val expenseSum = expenses.fold(0.00) { acc, value -> acc + value.sum }
     SheetContent(
         sheetState = sheetState,
         visible = uiState.value.expenseSheetDisplayed,
         onHideSheet = viewModel::hideExpenseSheet
     ) {
-
         ExpenseSheetContent(onSaveClick = viewModel::hideExpenseSheet)
     }
     SheetContent(
@@ -78,7 +84,10 @@ fun HomeScreenContent(modifier: Modifier = Modifier) {
         visible = uiState.value.categoriesSheetDisplayed,
         onHideSheet = viewModel::hideCategoriesSheet
     ) {
-        CategoriesSheetContent(onButtonClick = viewModel::hideCategoriesSheet)
+        CategoriesSheetContent(
+            viewModel = categoriesViewModel,
+            onButtonClick = viewModel::hideCategoriesSheet
+        )
     }
     DatesHeader(viewModel = viewModel)
     Spacer(modifier = Modifier.height(40.dp))
@@ -87,7 +96,8 @@ fun HomeScreenContent(modifier: Modifier = Modifier) {
         style = MaterialTheme.typography.displayLarge
     )
     Spacer(modifier = Modifier.height(40.dp))
-    ExpensesList(expenses = expenses, modifier = modifier)
+    ExpensesList(expenses = expenses,
+        modifier = modifier)
     HomeScreenButtons(
         onShowCategoriesSheet = viewModel::displayCategoriesSheet,
         onShowEditSheet = viewModel::displayExpenseSheet
@@ -198,7 +208,10 @@ fun DropdownMenuOptions(
 }
 
 @Composable
-fun ExpensesList(expenses: List<ExpenseTuple>, modifier: Modifier = Modifier) {
+fun ExpensesList(
+    expenses: List<ExpenseTuple>,
+    modifier: Modifier = Modifier
+) {
     val categoryExpensesMap = expenses.groupBy { it.categoryName }
     LazyColumn(
         modifier = modifier
@@ -214,7 +227,9 @@ fun ExpensesList(expenses: List<ExpenseTuple>, modifier: Modifier = Modifier) {
             },
         contentPadding = PaddingValues(8.dp)
     ) {
-        items(items = categoryExpensesMap.keys.toList()) { category ->
+        items(
+            items = categoryExpensesMap.keys.toList()
+        ) { category ->
             Column(
                 modifier = modifier
                     .fillMaxWidth()
@@ -291,3 +306,7 @@ fun ExpenseCard(expense: ExpenseTuple, modifier: Modifier = Modifier) {
 
 private fun String.lowercase(startIdx: Int) =
     "${this.substring(0, startIdx)}${this.substring(startIdx).lowercase()}"
+
+
+private fun List<ExpenseTuple>.filterByCategories(categories: List<Category>) =
+    filter { s -> categories.any { it.name == s.categoryName } }
