@@ -23,7 +23,8 @@ import java.time.ZoneId
 
 data class SettingsScreenUIState(
     val currentLimitSum: Double = 0.00,
-    val chosenDates: List<LocalDate> = listOf()
+    val chosenDates: List<LocalDate> = listOf(),
+    val limitsDisplayed: Boolean = false
 )
 
 class SettingsScreenViewModel(private val limitRepository: LimitRepository) : ViewModel() {
@@ -56,6 +57,11 @@ class SettingsScreenViewModel(private val limitRepository: LimitRepository) : Vi
             val limit = _uiState.value.toLimit()
             limitRepository.saveLimit(limit)
         }
+    }
+
+    fun toggleDisplayLimits() {
+        val limitsDisplayed = _uiState.value.limitsDisplayed
+        _uiState.update { it.copy(limitsDisplayed = !limitsDisplayed) }
     }
 
 }
