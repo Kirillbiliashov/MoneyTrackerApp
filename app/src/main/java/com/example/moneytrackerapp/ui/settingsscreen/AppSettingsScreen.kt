@@ -51,7 +51,9 @@ import com.maxkeppeker.sheets.core.models.base.Header
 import com.maxkeppeker.sheets.core.models.base.rememberSheetState
 import com.maxkeppeler.sheets.calendar.CalendarDialog
 import com.maxkeppeler.sheets.calendar.CalendarView
+import com.maxkeppeler.sheets.calendar.models.CalendarConfig
 import com.maxkeppeler.sheets.calendar.models.CalendarSelection
+import com.maxkeppeler.sheets.calendar.models.CalendarTimeline
 import kotlinx.coroutines.flow.StateFlow
 import java.text.SimpleDateFormat
 import java.time.LocalDate
@@ -61,8 +63,8 @@ import java.util.TimeZone
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun SettingsSheetContent(onButtonClick: () -> Unit, modifier: Modifier = Modifier) {
-    val viewModel: SettingsScreenViewModel = viewModel(factory = ViewModelProvider.Factory)
+fun SettingsSheetContent(viewModel: SettingsScreenViewModel,
+    onButtonClick: () -> Unit, modifier: Modifier = Modifier) {
     var limitDialogDisplayed by remember { mutableStateOf(false) }
     Column(
         modifier = modifier
@@ -103,7 +105,12 @@ fun SettingsSheetContent(onButtonClick: () -> Unit, modifier: Modifier = Modifie
                             )
                             CalendarView(
                                 sheetState = sheetState,
-                                selection = CalendarSelection.Dates { viewModel.updateChosenDates(it) })
+                                selection = CalendarSelection.Dates { viewModel.updateChosenDates(it) },
+                                config = CalendarConfig(
+                                    disabledDates = listOf(LocalDate.now()),
+                                    disabledTimeline = CalendarTimeline.PAST
+                                )
+                            )
                         }
                     }
                 },

@@ -9,6 +9,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import java.time.LocalDate
+import java.time.LocalDateTime
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 
@@ -23,6 +24,9 @@ data class HomeScreenUIState(
 ) {
     val chosenDateIdx: Int
         get() = calendarOption.datesList.indexOf(chosenDate)
+
+    val localDateTimeRange: Pair<LocalDateTime, LocalDateTime>
+        get() = calendarOption.parseDateStr(chosenDate)
 }
 
 
@@ -114,6 +118,5 @@ class HomeScreenViewModel(private val expenseRepository: ExpenseRepository) : Vi
     fun hideSettingsSheet() {
         _uiState.update { it.copy(settingsSheetDisplayed = false) }
     }
-
 
 }

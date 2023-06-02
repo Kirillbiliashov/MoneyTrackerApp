@@ -17,10 +17,15 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarDuration
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -28,10 +33,14 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.moneytrackerapp.data.entity.Limit
+import com.example.moneytrackerapp.data.entity.localDateRangeString
 import com.example.moneytrackerapp.ui.ViewModelProvider
 import com.example.moneytrackerapp.ui.homescreen.HomeScreenContent
 import com.example.moneytrackerapp.ui.homescreen.HomeScreenViewModel
 import com.example.moneytrackerapp.ui.theme.MoneyTrackerAppTheme
+import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.flow.receiveAsFlow
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -54,28 +63,45 @@ class MainActivity : ComponentActivity() {
 @Composable
 fun MoneyTrackerApp(modifier: Modifier = Modifier) {
     val viewModel: HomeScreenViewModel = viewModel(factory = ViewModelProvider.Factory)
-    Scaffold(topBar = {
-        TopAppBar(title = {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Text(
-                    text = "Money Tracker",
-                    style = MaterialTheme.typography.displayLarge,
-                    fontSize = 32.sp
-                )
-                Spacer(modifier = modifier.weight(1f))
-                IconButton(onClick = viewModel::displaySettingsSheet) {
-                    Icon(imageVector = Icons.Default.Settings, contentDescription = null)
+    val snackbarHostState = remember { SnackbarHostState() }
+    val channel = remember { Channel<Limit>(Channel.CONFLATED) }
+    LaunchedEffect(channel) {
+        channel.receiveAsFlow().collect { limit ->
+            snackbarHostState.showSnackbar(
+                message = "You have hit the limit of ${limit.sum} on ${limit.localDateRangeString()}",
+                actionLabel = "OK",
+                duration = SnackbarDuration.Short
+            )
+        }
+    }
+    Scaffold(
+        snackbarHost = { SnackbarHost(snackbarHostState) },
+        topBar = {
+            TopAppBar(title = {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(
+                        text = "Money Tracker",
+                        style = MaterialTheme.typography.displayLarge,
+                        fontSize = 32.sp
+                    )
+                    Spacer(modifier = modifier.weight(1f))
+                    IconButton(onClick = viewModel::displaySettingsSheet) {
+                        Icon(imageVector = Icons.Default.Settings, contentDescription = null)
+                    }
                 }
-            }
-        })
-    }) {
+            })
+        }) {
         Column(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(it),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
-            HomeScreenContent(viewModel = viewModel, modifier = modifier.weight(1f))
+            HomeScreenContent(
+                viewModel = viewModel,
+                onHitLimit = { l -> channel.trySend(l) },
+                modifier = modifier.weight(1f)
+            )
         }
     }
 }

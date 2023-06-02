@@ -25,6 +25,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material.icons.rounded.Edit
 import androidx.compose.material.icons.rounded.List
+import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.DropdownMenu
@@ -36,6 +37,8 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.SheetState
+import androidx.compose.material3.Snackbar
+import androidx.compose.material3.SnackbarData
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
@@ -55,27 +58,41 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.moneytrackerapp.data.entity.Category
 import com.example.moneytrackerapp.data.entity.ExpenseTuple
+import com.example.moneytrackerapp.data.entity.Limit
 import com.example.moneytrackerapp.ui.ViewModelProvider
 import com.example.moneytrackerapp.ui.categoriesscreen.CategoriesScreenViewModel
 import com.example.moneytrackerapp.ui.categoriesscreen.CategoriesSheetContent
 import com.example.moneytrackerapp.ui.expensescreen.ExpenseSheetContent
+import com.example.moneytrackerapp.ui.settingsscreen.SettingsScreenViewModel
 import com.example.moneytrackerapp.ui.settingsscreen.SettingsSheetContent
 import com.maxkeppeker.sheets.core.models.base.rememberSheetState
 import com.maxkeppeler.sheets.calendar.CalendarDialog
 import com.maxkeppeler.sheets.calendar.models.CalendarSelection
+import java.time.LocalDateTime
+import java.time.ZoneId
+import kotlin.math.exp
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun HomeScreenContent(viewModel: HomeScreenViewModel, modifier: Modifier = Modifier) {
+fun HomeScreenContent(
+    viewModel: HomeScreenViewModel,
+    onHitLimit: (Limit) -> Unit,
+    modifier: Modifier = Modifier
+) {
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     val categoriesViewModel: CategoriesScreenViewModel =
         viewModel(factory = ViewModelProvider.Factory)
+    val settingsViewModel: SettingsScreenViewModel =
+        viewModel(factory = ViewModelProvider.Factory)
+    val limits = settingsViewModel.limits.collectAsState()
     val categoriesUiState = categoriesViewModel.uiState.collectAsState()
     val chosenCategories = categoriesUiState.value.chosenCategories
     val uiState = viewModel.uiState.collectAsState()
     val expenses =
         uiState.value.displayExpenses.filterByCategories(chosenCategories)
     val expenseSum = expenses.fold(0.00) { acc, value -> acc + value.sum }
+    val limit = limits.value.findHitLimit(expenseSum, uiState.value.localDateTimeRange)
+    if (limit != null) onHitLimit(limit)
     SheetContent(
         sheetState = sheetState,
         visible = uiState.value.expenseSheetDisplayed,
@@ -98,7 +115,10 @@ fun HomeScreenContent(viewModel: HomeScreenViewModel, modifier: Modifier = Modif
         visible = uiState.value.settingsSheetDisplayed,
         onHideSheet = viewModel::hideSettingsSheet
     ) {
-        SettingsSheetContent(onButtonClick = viewModel::hideSettingsSheet)
+        SettingsSheetContent(
+            viewModel = settingsViewModel,
+            onButtonClick = viewModel::hideSettingsSheet
+        )
     }
     DatesHeader(viewModel = viewModel)
     Spacer(modifier = Modifier.height(40.dp))
@@ -302,9 +322,11 @@ fun ExpenseCard(expense: ExpenseTuple, modifier: Modifier = Modifier) {
         )
     ) {
         Spacer(modifier = modifier.weight(1F))
-        Column(modifier = Modifier
-            .fillMaxSize()
-            .padding(8.dp)) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(8.dp)
+        ) {
             Row(
                 modifier = modifier
                     .fillMaxSize(),
@@ -332,3 +354,13 @@ private fun String.lowercase(startIdx: Int) =
 
 private fun List<ExpenseTuple>.filterByCategories(categories: List<Category>) =
     filter { s -> categories.any { it.name == s.categoryName } }
+
+private fun List<Limit>.findHitLimit(
+    expenseSum: Double,
+    dateTimeRange: Pair<LocalDateTime, LocalDateTime>
+): Limit? {
+    val zone = ZoneId.systemDefault()
+    val rangeStart = dateTimeRange.first.atZone(zone).toInstant().toEpochMilli()
+    val rangeEnd = dateTimeRange.second.atZone(zone).toInstant().toEpochMilli()
+    return find { rangeStart >= it.startDate && rangeEnd <= it.endDte && expenseSum >= it.sum }
+}
