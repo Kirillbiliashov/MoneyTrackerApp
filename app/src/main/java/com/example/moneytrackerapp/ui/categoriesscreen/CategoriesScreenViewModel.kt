@@ -26,7 +26,6 @@ class CategoriesScreenViewModel(private val categoryRepo: CategoryRepository) : 
         private set
 
     init {
-        println("inside init block")
         viewModelScope.launch {
             categoryRepo.getAllCategoriesFlow().collect {
                 categories = it
