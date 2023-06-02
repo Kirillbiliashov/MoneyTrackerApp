@@ -66,29 +66,14 @@ fun MoneyTrackerApp(modifier: Modifier = Modifier) {
     val snackbarHostState = remember { SnackbarHostState() }
     val channel = remember { Channel<Limit>(Channel.CONFLATED) }
     LaunchedEffect(channel) {
-        channel.receiveAsFlow().collect { limit ->
-            snackbarHostState.showSnackbar(
-                message = "You have hit the limit of ${limit.sum} on ${limit.localDateRangeString()}",
-                actionLabel = "OK",
-                duration = SnackbarDuration.Short
-            )
-        }
+        channel.receiveAsFlow()
+            .collect { limit -> displayLimitSnackbar(limit, snackbarHostState) }
     }
     Scaffold(
         snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
             TopAppBar(title = {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text(
-                        text = "Money Tracker",
-                        style = MaterialTheme.typography.displayLarge,
-                        fontSize = 32.sp
-                    )
-                    Spacer(modifier = modifier.weight(1f))
-                    IconButton(onClick = viewModel::displaySettingsSheet) {
-                        Icon(imageVector = Icons.Default.Settings, contentDescription = null)
-                    }
-                }
+                AppBar(onSettingsClick = viewModel::displaySettingsSheet)
             })
         }) {
         Column(
@@ -102,6 +87,29 @@ fun MoneyTrackerApp(modifier: Modifier = Modifier) {
                 onHitLimit = { l -> channel.trySend(l) },
                 modifier = modifier.weight(1f)
             )
+        }
+    }
+}
+
+private suspend fun displayLimitSnackbar(limit: Limit, snackbarHostState: SnackbarHostState) {
+    snackbarHostState.showSnackbar(
+        message = "You have hit the limit of ${limit.sum} on ${limit.localDateRangeString()}",
+        actionLabel = "OK",
+        duration = SnackbarDuration.Short
+    )
+}
+
+@Composable
+fun AppBar(onSettingsClick: () -> Unit, modifier: Modifier = Modifier) {
+    Row(verticalAlignment = Alignment.CenterVertically) {
+        Text(
+            text = "Money Tracker",
+            style = MaterialTheme.typography.displayLarge,
+            fontSize = 32.sp
+        )
+        Spacer(modifier = modifier.weight(1f))
+        IconButton(onClick = onSettingsClick) {
+            Icon(imageVector = Icons.Default.Settings, contentDescription = null)
         }
     }
 }

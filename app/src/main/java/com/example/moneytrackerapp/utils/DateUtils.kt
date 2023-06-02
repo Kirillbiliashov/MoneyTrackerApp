@@ -1,15 +1,17 @@
-package com.example.moneytrackerapp.ui.homescreen
+package com.example.moneytrackerapp.utils
 
 import java.time.DayOfWeek
 import java.time.LocalDate
+import java.time.LocalDateTime
+import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.time.temporal.TemporalAdjusters
 import java.util.Calendar
 
-object HomeScreenUtils {
+object DateUtils {
 
-     private val MONTH_FORMATTER = DateTimeFormatter.ofPattern("MMM\nyyyy")
-     private val DAY_FORMATTER = DateTimeFormatter.ofPattern("dd.MM")
+      val MONTH_FORMATTER = DateTimeFormatter.ofPattern("MMM\nyyyy")
+      val DAY_FORMATTER = DateTimeFormatter.ofPattern("dd.MM")
 
     fun getDaysList(): List<String> {
         val calendar = Calendar.getInstance()
@@ -71,5 +73,9 @@ object HomeScreenUtils {
                        ${nextDate.year}
             """.trimIndent()
     }
+
+    fun LocalDateTime.toMillis() = atZone(ZoneId.systemDefault())
+        .toInstant()
+        .toEpochMilli()
 
 }

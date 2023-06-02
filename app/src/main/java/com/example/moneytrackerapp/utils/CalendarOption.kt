@@ -1,29 +1,27 @@
-package com.example.moneytrackerapp.ui.homescreen
+package com.example.moneytrackerapp.utils
 
-import androidx.compose.ui.text.toUpperCase
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.LocalTime
 import java.time.Month
 import java.time.YearMonth
-import java.time.ZoneId
-import java.util.Locale
 
 enum class CalendarOption {
     DAILY {
-        override val datesList: List<String> by lazy { HomeScreenUtils.getDaysList() }
-        override val currentDate: String by lazy { HomeScreenUtils.getCurrentDay() }
+        override val datesList: List<String> by lazy { DateUtils.getDaysList() }
+        override val currentDate: String by lazy { DateUtils.getCurrentDay() }
         override fun parseDateStr(date: String): Pair<LocalDateTime, LocalDateTime> {
             val splitDate = date.split(".")
-            val localDate = LocalDate.of(2023, splitDate[1].toInt(), splitDate[0].toInt())
+            val localDate = LocalDate.of(2023, splitDate[1].toInt(),
+                splitDate[0].toInt())
             val startOfDay = LocalDateTime.of(localDate, LocalTime.MIN)
             val endOfDay = LocalDateTime.of(localDate, LocalTime.MAX)
             return startOfDay to endOfDay
         }
     },
     WEEKLY {
-        override val datesList: List<String> by lazy { HomeScreenUtils.getWeeksList() }
-        override val currentDate: String by lazy { HomeScreenUtils.getCurrentWeek() }
+        override val datesList: List<String> by lazy { DateUtils.getWeeksList() }
+        override val currentDate: String by lazy { DateUtils.getCurrentWeek() }
         override fun parseDateStr(date: String): Pair<LocalDateTime, LocalDateTime> {
             val stringParts = date.split("\n")
             val daysRangeStr = stringParts[0].trim()
@@ -44,8 +42,8 @@ enum class CalendarOption {
         }
     },
     MONTHLY {
-        override val datesList: List<String> by lazy { HomeScreenUtils.getMonthsList() }
-        override val currentDate: String by lazy { HomeScreenUtils.getCurrentMonth() }
+        override val datesList: List<String> by lazy { DateUtils.getMonthsList() }
+        override val currentDate: String by lazy { DateUtils.getCurrentMonth() }
         override fun parseDateStr(date: String): Pair<LocalDateTime, LocalDateTime> {
             val stringParts = date.split("\n")
             val monthStr = stringParts[0]

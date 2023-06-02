@@ -4,6 +4,9 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.moneytrackerapp.data.entity.ExpenseTuple
 import com.example.moneytrackerapp.data.repo.ExpenseRepository
+import com.example.moneytrackerapp.utils.CalendarOption
+import com.example.moneytrackerapp.utils.DateUtils
+import com.example.moneytrackerapp.utils.DateUtils.toMillis
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.update
@@ -17,7 +20,7 @@ data class HomeScreenUIState(
     val dropdownExpanded: Boolean = false,
     val displayExpenses: List<ExpenseTuple> = listOf(),
     val calendarOption: CalendarOption = CalendarOption.DAILY,
-    val chosenDate: String = HomeScreenUtils.getCurrentDay(),
+    val chosenDate: String = DateUtils.getCurrentDay(),
     val expenseSheetDisplayed: Boolean = false,
     val categoriesSheetDisplayed: Boolean = false,
     val settingsSheetDisplayed: Boolean = false
@@ -37,7 +40,6 @@ class HomeScreenViewModel(private val expenseRepository: ExpenseRepository) : Vi
     private var expenses: List<ExpenseTuple> = listOf()
 
     init {
-        println("inside view model init")
         viewModelScope.launch {
             expenseRepository.getAllExpensesFlow()
                 .collect {
@@ -50,9 +52,8 @@ class HomeScreenViewModel(private val expenseRepository: ExpenseRepository) : Vi
     private fun updateUIStateExpenses() {
         val chosenDate = uiState.value.chosenDate
         val dateRange = uiState.value.calendarOption.parseDateStr(chosenDate)
-        val zone = ZoneId.systemDefault()
-        val startDate = dateRange.first.atZone(zone).toInstant().toEpochMilli()
-        val endDate = dateRange.second.atZone(zone).toInstant().toEpochMilli()
+        val startDate = dateRange.first.toMillis()
+        val endDate = dateRange.second.toMillis()
         val displayExpenses = expenses
             .filter { expense -> expense.date in startDate..endDate }
         _uiState.update {
@@ -85,10 +86,9 @@ class HomeScreenViewModel(private val expenseRepository: ExpenseRepository) : Vi
     }
 
     fun updateChosenDate(localDate: LocalDate) {
-        val formatter = DateTimeFormatter.ofPattern("dd.MM")
         _uiState.update {
             it.copy(
-                chosenDate = localDate.format(formatter),
+                chosenDate = localDate.format(DateUtils.DAY_FORMATTER),
                 calendarOption = CalendarOption.DAILY
             )
         }

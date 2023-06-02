@@ -2,7 +2,6 @@ package com.example.moneytrackerapp.ui.homescreen
 
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -11,7 +10,6 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.defaultMinSize
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -25,7 +23,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material.icons.rounded.Edit
 import androidx.compose.material.icons.rounded.List
-import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.DropdownMenu
@@ -37,11 +34,10 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.SheetState
-import androidx.compose.material3.Snackbar
-import androidx.compose.material3.SnackbarData
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.State
 import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -57,6 +53,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.moneytrackerapp.data.entity.Category
+import com.example.moneytrackerapp.data.entity.Expense
 import com.example.moneytrackerapp.data.entity.ExpenseTuple
 import com.example.moneytrackerapp.data.entity.Limit
 import com.example.moneytrackerapp.ui.ViewModelProvider
@@ -65,12 +62,13 @@ import com.example.moneytrackerapp.ui.categoriesscreen.CategoriesSheetContent
 import com.example.moneytrackerapp.ui.expensescreen.ExpenseSheetContent
 import com.example.moneytrackerapp.ui.settingsscreen.SettingsScreenViewModel
 import com.example.moneytrackerapp.ui.settingsscreen.SettingsSheetContent
+import com.example.moneytrackerapp.utils.CalendarOption
+import com.example.moneytrackerapp.utils.DateUtils.toMillis
 import com.maxkeppeker.sheets.core.models.base.rememberSheetState
 import com.maxkeppeler.sheets.calendar.CalendarDialog
 import com.maxkeppeler.sheets.calendar.models.CalendarSelection
 import java.time.LocalDateTime
 import java.time.ZoneId
-import kotlin.math.exp
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -82,17 +80,10 @@ fun HomeScreenContent(
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     val categoriesViewModel: CategoriesScreenViewModel =
         viewModel(factory = ViewModelProvider.Factory)
+    val categoriesUiState = categoriesViewModel.uiState.collectAsState()
     val settingsViewModel: SettingsScreenViewModel =
         viewModel(factory = ViewModelProvider.Factory)
-    val limits = settingsViewModel.limits.collectAsState()
-    val categoriesUiState = categoriesViewModel.uiState.collectAsState()
-    val chosenCategories = categoriesUiState.value.chosenCategories
     val uiState = viewModel.uiState.collectAsState()
-    val expenses =
-        uiState.value.displayExpenses.filterByCategories(chosenCategories)
-    val expenseSum = expenses.fold(0.00) { acc, value -> acc + value.sum }
-    val limit = limits.value.findHitLimit(expenseSum, uiState.value.localDateTimeRange)
-    if (limit != null) onHitLimit(limit)
     SheetContent(
         sheetState = sheetState,
         visible = uiState.value.expenseSheetDisplayed,
@@ -107,6 +98,7 @@ fun HomeScreenContent(
     ) {
         CategoriesSheetContent(
             viewModel = categoriesViewModel,
+            uiState = categoriesUiState,
             onButtonClick = viewModel::hideCategoriesSheet
         )
     }
@@ -120,6 +112,28 @@ fun HomeScreenContent(
             onButtonClick = viewModel::hideSettingsSheet
         )
     }
+    HomeScreenData(
+        chosenCategories = categoriesUiState.value.chosenCategories,
+        limits = settingsViewModel.limits.collectAsState(),
+        onHitLimit = onHitLimit,
+        viewModel = viewModel
+    )
+}
+
+@Composable
+fun HomeScreenData(
+    chosenCategories: List<Category>,
+    limits: State<List<Limit>>,
+    onHitLimit: (Limit) -> Unit,
+    viewModel: HomeScreenViewModel,
+    modifier: Modifier = Modifier
+) {
+    val uiState = viewModel.uiState.collectAsState()
+    val expenses =
+        uiState.value.displayExpenses.filterByCategories(chosenCategories)
+    val expenseSum = expenses.fold(0.00) { acc, value -> acc + value.sum }
+    val limit = limits.value.findHitLimit(expenseSum, uiState.value.localDateTimeRange)
+    if (limit != null) onHitLimit(limit)
     DatesHeader(viewModel = viewModel)
     Spacer(modifier = Modifier.height(40.dp))
     Text(
@@ -197,17 +211,7 @@ fun DateItems(viewModel: HomeScreenViewModel, modifier: Modifier = Modifier) {
         modifier = modifier
             .fillMaxWidth()
             .height(50.dp)
-            .graphicsLayer(compositingStrategy = CompositingStrategy.Offscreen)
-            .drawWithContent {
-                drawContent()
-                drawRect(
-                    brush = Brush.horizontalGradient(
-                        0f to Color.Transparent,
-                        0.2f to Color.Red, 0.8f to Color.Red, 1f to Color.Transparent
-                    ),
-                    blendMode = BlendMode.DstIn
-                )
-            },
+            .dateItemsGraphics(),
         verticalAlignment = Alignment.CenterVertically
     ) {
         items(items = uiState.value.calendarOption.datesList) { item ->
@@ -224,6 +228,19 @@ fun DateItems(viewModel: HomeScreenViewModel, modifier: Modifier = Modifier) {
         }
     }
 }
+
+private fun Modifier.dateItemsGraphics() =
+    graphicsLayer(compositingStrategy = CompositingStrategy.Offscreen)
+        .drawWithContent {
+            drawContent()
+            drawRect(
+                brush = Brush.horizontalGradient(
+                    0f to Color.Transparent,
+                    0.2f to Color.Red, 0.8f to Color.Red, 1f to Color.Transparent
+                ),
+                blendMode = BlendMode.DstIn
+            )
+        }
 
 @Composable
 fun DropdownMenuOptions(
@@ -247,19 +264,10 @@ fun ExpensesList(
         modifier = modifier
             .fillMaxWidth()
             .padding(bottom = 16.dp)
-            .graphicsLayer(compositingStrategy = CompositingStrategy.Offscreen)
-            .drawWithContent {
-                drawContent()
-                drawRect(
-                    brush = Brush.verticalGradient(0.9f to Color.Red, 1f to Color.Transparent),
-                    blendMode = BlendMode.DstIn
-                )
-            },
+            .expenseListGraphics(),
         contentPadding = PaddingValues(8.dp)
     ) {
-        items(
-            items = categoryExpensesMap.keys.toList()
-        ) { category ->
+        items(items = categoryExpensesMap.keys.toList()) { category ->
             Column(
                 modifier = modifier
                     .fillMaxWidth()
@@ -272,8 +280,20 @@ fun ExpensesList(
             }
         }
     }
-
 }
+
+private fun Modifier.expenseListGraphics() =
+    graphicsLayer(compositingStrategy = CompositingStrategy.Offscreen)
+        .drawWithContent {
+            drawContent()
+            drawRect(
+                brush = Brush.verticalGradient(
+                    0.9f to Color.Red,
+                    1f to Color.Transparent
+                ),
+                blendMode = BlendMode.DstIn
+            )
+        }
 
 @Composable
 fun HomeScreenButtons(
@@ -327,24 +347,29 @@ fun ExpenseCard(expense: ExpenseTuple, modifier: Modifier = Modifier) {
                 .fillMaxSize()
                 .padding(8.dp)
         ) {
-            Row(
-                modifier = modifier
-                    .fillMaxSize(),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(text = expense.name, fontSize = 18.sp)
-                Spacer(modifier = modifier.weight(1F))
-                Text(text = expense.sum.toString(), fontSize = 18.sp)
-            }
-            if (expense.note != null) {
-                Text(
-                    text = expense.note,
-                    fontWeight = FontWeight.W100,
-                    modifier = modifier.padding(top = 4.dp)
-                )
-            }
+            ExpenseCardContent(expense = expense)
         }
         Spacer(modifier = modifier.weight(1F))
+    }
+}
+
+@Composable
+fun ExpenseCardContent(expense: ExpenseTuple, modifier: Modifier = Modifier) {
+    Row(
+        modifier = modifier
+            .fillMaxSize(),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Text(text = expense.name, fontSize = 18.sp)
+        Spacer(modifier = modifier.weight(1F))
+        Text(text = expense.sum.toString(), fontSize = 18.sp)
+    }
+    if (expense.note != null) {
+        Text(
+            text = expense.note,
+            fontWeight = FontWeight.W100,
+            modifier = modifier.padding(top = 4.dp)
+        )
     }
 }
 
@@ -359,8 +384,11 @@ private fun List<Limit>.findHitLimit(
     expenseSum: Double,
     dateTimeRange: Pair<LocalDateTime, LocalDateTime>
 ): Limit? {
-    val zone = ZoneId.systemDefault()
-    val rangeStart = dateTimeRange.first.atZone(zone).toInstant().toEpochMilli()
-    val rangeEnd = dateTimeRange.second.atZone(zone).toInstant().toEpochMilli()
-    return find { rangeStart >= it.startDate && rangeEnd <= it.endDte && expenseSum >= it.sum }
+    val rangeStart = dateTimeRange.first.toMillis()
+    val rangeEnd = dateTimeRange.second.toMillis()
+    return find {
+        rangeStart >= it.startDate &&
+                rangeEnd <= it.endDte &&
+                expenseSum >= it.sum
+    }
 }

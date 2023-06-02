@@ -31,7 +31,7 @@ import com.example.moneytrackerapp.ui.ViewModelProvider
 @Composable
 fun ExpenseSheetContent(onSaveClick: () -> Unit, modifier: Modifier = Modifier) {
     Column(
-        modifier = Modifier.fillMaxSize(),
+        modifier = modifier.fillMaxSize(),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         AddExpenseForm(onSaveClick = onSaveClick)
@@ -42,7 +42,10 @@ fun ExpenseSheetContent(onSaveClick: () -> Unit, modifier: Modifier = Modifier) 
 fun AddExpenseForm(onSaveClick: () -> Unit, modifier: Modifier = Modifier) {
     val viewModel: ExpenseScreenViewModel = viewModel(factory = ViewModelProvider.Factory)
     val uiState = viewModel.uiState.collectAsState()
-    Text(text = "Add expense", fontSize = 32.sp, modifier = modifier.padding(vertical = 16.dp))
+    Text(
+        text = "Add expense", fontSize = 32.sp,
+        modifier = modifier.padding(vertical = 16.dp)
+    )
     OutlinedTextField(
         value = uiState.value.name,
         onValueChange = viewModel::updateExpenseName,
@@ -56,7 +59,9 @@ fun AddExpenseForm(onSaveClick: () -> Unit, modifier: Modifier = Modifier) {
         label = { Text(text = "Sum") },
         modifier = modifier.padding(vertical = 8.dp)
     )
-    CategoryDropdown(viewModel = viewModel)
+    CategoryDropdown(expanded = uiState.value.dropdownExpanded,
+        category = uiState.value.category,
+        viewModel = viewModel)
     OutlinedTextField(
         value = uiState.value.note ?: "",
         onValueChange = viewModel::updateExpenseNote,
@@ -71,17 +76,18 @@ fun AddExpenseForm(onSaveClick: () -> Unit, modifier: Modifier = Modifier) {
     }
 }
 
+
 @Composable
 fun CategoryDropdown(
+    expanded: Boolean,
+    category: Category?,
     viewModel: ExpenseScreenViewModel,
     modifier: Modifier = Modifier
 ) {
-    val uiState = viewModel.uiState.collectAsState()
-    val expanded = uiState.value.dropdownExpanded
     Box {
         DropdownTextField(
             expanded = expanded,
-            category = uiState.value.category,
+            category = category,
             onIconClick = viewModel::toggleDropdown
         )
         DropdownMenu(

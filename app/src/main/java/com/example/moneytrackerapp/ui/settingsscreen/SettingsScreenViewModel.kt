@@ -9,6 +9,7 @@ import com.example.moneytrackerapp.data.entity.Category
 import com.example.moneytrackerapp.data.entity.Limit
 import com.example.moneytrackerapp.data.repo.LimitRepository
 import com.example.moneytrackerapp.ui.expensescreen.ExpenseScreenUIState
+import com.example.moneytrackerapp.utils.DateUtils.toMillis
 import com.maxkeppeker.sheets.core.models.base.rememberSheetState
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -69,9 +70,8 @@ class SettingsScreenViewModel(private val limitRepository: LimitRepository) : Vi
 private fun SettingsScreenUIState.toLimit(): Limit {
     val startDate = LocalDateTime.of(chosenDates.first(), LocalTime.MIN)
     val endDate = LocalDateTime.of(chosenDates.last(), LocalTime.MAX)
-    val zone = ZoneId.systemDefault()
-    val startDateMillis = startDate.atZone(zone).toInstant().toEpochMilli()
-    val endDateMillis = endDate.atZone(zone).toInstant().toEpochMilli()
+    val startDateMillis = startDate.toMillis()
+    val endDateMillis = endDate.toMillis()
     return Limit(
         sum = currentLimitSum,
         startDate = startDateMillis,
