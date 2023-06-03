@@ -2,11 +2,13 @@ package com.example.moneytrackerapp.ui.homescreen
 
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -17,10 +19,12 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.pager.PageSize
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.DateRange
@@ -42,17 +46,26 @@ import androidx.compose.material3.SheetState
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.State
 import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawWithContent
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.BlendMode
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.CompositingStrategy
+import androidx.compose.ui.graphics.drawscope.DrawStyle
+import androidx.compose.ui.graphics.drawscope.Fill
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -71,7 +84,9 @@ import com.example.moneytrackerapp.utils.DateUtils.toMillis
 import com.maxkeppeker.sheets.core.models.base.rememberSheetState
 import com.maxkeppeler.sheets.calendar.CalendarDialog
 import com.maxkeppeler.sheets.calendar.models.CalendarSelection
+import java.lang.Integer.min
 import java.time.LocalDateTime
+import kotlin.random.Random
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -133,13 +148,14 @@ fun HomeScreenData(
     modifier: Modifier = Modifier
 ) {
     val uiState = viewModel.uiState.collectAsState()
+    val expenseStatsDisplayed = uiState.value.expenseStatsDisplayed
     val expenses =
         uiState.value.displayExpenses.filterByCategories(chosenCategories)
     val expenseSum = expenses.fold(0.00) { acc, value -> acc + value.sum }
     val limit = limits.value.findHitLimit(expenseSum, uiState.value.localDateTimeRange)
     if (limit != null) onHitLimit(limit)
     HomeScreenHeader(
-        displayStats = uiState.value.expenseStatsDisplayed,
+        displayStats = expenseStatsDisplayed,
         viewModel = viewModel
     )
     Spacer(modifier = Modifier.height(40.dp))
@@ -148,12 +164,94 @@ fun HomeScreenData(
         style = MaterialTheme.typography.displayLarge
     )
     Spacer(modifier = Modifier.height(40.dp))
-    ExpensesList(expenses = expenses, modifier = modifier)
+    if (expenseStatsDisplayed) {
+        ExpensesStats(expenses = expenses)
+    } else {
+        ExpensesList(expenses = expenses, modifier = modifier)
+    }
     HomeScreenButtons(
         onShowCategoriesSheet = viewModel::displayCategoriesSheet,
         onShowEditSheet = viewModel::displayExpenseSheet
     )
 }
+
+@Composable
+fun ExpensesStats(expenses: List<ExpenseTuple>, modifier: Modifier = Modifier) {
+    Column(modifier = modifier.fillMaxSize().padding(8.dp)) {
+        Text(
+            text = "Allocation of expenses by categories:",
+            style = MaterialTheme.typography.displayLarge, fontSize = 20.sp
+        )
+        val categoryExpensesMap = expenses.groupBy { it.categoryName }
+        val chartValues = categoryExpensesMap.values.map { it.sumOf { e -> e.sum } }
+        val chartColors = colorsList(categoryExpensesMap.size)
+        Column {
+            categoryExpensesMap.keys.forEachIndexed { idx, category ->
+                Row(
+                    modifier = modifier
+                        .fillMaxWidth()
+                        .padding(8.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Spacer(
+                        modifier = modifier
+                            .size(30.dp)
+                            .background(chartColors[idx])
+                    )
+                    Text(
+                        text = " - $category", style = MaterialTheme.typography.displayMedium,
+                        fontSize = 16.sp
+                    )
+                }
+            }
+        }
+        PieChart(
+            modifier = Modifier
+                .padding(20.dp)
+                .fillMaxWidth(),
+            colors = chartColors,
+            inputValues = chartValues
+        )
+    }
+}
+
+@Composable
+fun PieChart(
+    modifier: Modifier = Modifier,
+    colors: List<Color>,
+    inputValues: List<Double>
+) {
+    val chartDegrees = 360f
+    var startAngle = 270f
+    val proportions = inputValues.map {
+        it * 100 / inputValues.sum()
+    }
+    val angleProgress = proportions.map { prop ->
+        chartDegrees * prop / 100
+    }
+    BoxWithConstraints(modifier = modifier, contentAlignment = Alignment.Center) {
+        val canvasSize = min(constraints.maxWidth, constraints.maxHeight)
+        val size = Size(canvasSize.toFloat(), canvasSize.toFloat())
+        val canvasSizeDp = with(LocalDensity.current) { canvasSize.toDp() }
+        Canvas(modifier = Modifier.size(canvasSizeDp)) {
+            angleProgress.forEachIndexed { index, angle ->
+                drawArc(
+                    color = colors[index],
+                    startAngle = startAngle,
+                    sweepAngle = angle.toFloat(),
+                    useCenter = true,
+                    size = size,
+                    style = Fill
+                )
+                startAngle += angle.toFloat()
+            }
+
+        }
+
+    }
+}
+
+
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -437,4 +535,13 @@ private fun List<Limit>.findHitLimit(
                 rangeEnd <= it.endDte &&
                 expenseSum >= it.sum
     }
+}
+
+private fun colorsList(listSize: Int) = List(size = listSize) { randomColor() }
+
+private fun randomColor(): Color {
+    val red = Random.nextInt(256)
+    val green = Random.nextInt(256)
+    val blue = Random.nextInt(256)
+    return Color(red, green, blue)
 }
