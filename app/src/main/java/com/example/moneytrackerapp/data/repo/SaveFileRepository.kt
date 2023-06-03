@@ -19,11 +19,13 @@ class WorkerManagerSaveFileRepository(ctxt: Context) : SaveFileRepository {
 
     private val workManager = WorkManager.getInstance(ctxt)
 
+    private val WORK_NAME = "save_file"
+
     override fun saveExpensesToFile(expenses: List<ExpenseTuple>) {
         val workBuilder = OneTimeWorkRequestBuilder<SaveFileWorker>()
         workBuilder.setInputData(generateWorkerInputData(expenses))
         workManager.enqueueUniqueWork(
-            "save_file",
+            WORK_NAME,
             ExistingWorkPolicy.REPLACE,
             workBuilder.build()
         )
@@ -31,7 +33,8 @@ class WorkerManagerSaveFileRepository(ctxt: Context) : SaveFileRepository {
 
     private fun generateWorkerInputData(expenses: List<ExpenseTuple>): Data {
         val builder = Data.Builder()
-        return builder.putString("expenses", getOutputStr(expenses)).build()
+        return builder.putString(SaveFileWorker.EXPENSES_KEY,
+            getOutputStr(expenses)).build()
     }
 
     private fun getOutputStr(expenses: List<ExpenseTuple>): String {
