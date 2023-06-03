@@ -1,6 +1,7 @@
 package com.example.moneytrackerapp.ui.homescreen
 
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -25,6 +26,8 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material.icons.rounded.Edit
 import androidx.compose.material.icons.rounded.List
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.DropdownMenu
@@ -55,7 +58,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.moneytrackerapp.data.entity.Category
-import com.example.moneytrackerapp.data.entity.Expense
 import com.example.moneytrackerapp.data.entity.ExpenseTuple
 import com.example.moneytrackerapp.data.entity.Limit
 import com.example.moneytrackerapp.ui.ViewModelProvider
@@ -70,7 +72,6 @@ import com.maxkeppeker.sheets.core.models.base.rememberSheetState
 import com.maxkeppeler.sheets.calendar.CalendarDialog
 import com.maxkeppeler.sheets.calendar.models.CalendarSelection
 import java.time.LocalDateTime
-import java.time.ZoneId
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -137,7 +138,10 @@ fun HomeScreenData(
     val expenseSum = expenses.fold(0.00) { acc, value -> acc + value.sum }
     val limit = limits.value.findHitLimit(expenseSum, uiState.value.localDateTimeRange)
     if (limit != null) onHitLimit(limit)
-    DatesHeader(viewModel = viewModel)
+    HomeScreenHeader(
+        displayStats = uiState.value.expenseStatsDisplayed,
+        viewModel = viewModel
+    )
     Spacer(modifier = Modifier.height(40.dp))
     Text(
         text = "$${String.format("%.2f", expenseSum)}",
@@ -166,7 +170,10 @@ fun SheetContent(
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun DatesHeader(viewModel: HomeScreenViewModel, modifier: Modifier = Modifier) {
+fun HomeScreenHeader(
+    displayStats: Boolean,
+    viewModel: HomeScreenViewModel, modifier: Modifier = Modifier
+) {
     val sheetState = rememberSheetState()
     CalendarDialog(
         state = sheetState,
@@ -177,6 +184,41 @@ fun DatesHeader(viewModel: HomeScreenViewModel, modifier: Modifier = Modifier) {
     ) {
         IconButton(onClick = { sheetState.show() }) {
             Icon(imageVector = Icons.Default.DateRange, contentDescription = null)
+        }
+        Spacer(modifier = modifier.weight(1f))
+        Row {
+            val primary = MaterialTheme.colorScheme.primary
+            val onPrimary = MaterialTheme.colorScheme.onPrimary
+            Button(
+                onClick = viewModel::toggleExpenseDisplayStyle,
+                shape = RoundedCornerShape(
+                    topStart = 50.dp,
+                    topEnd = 0.dp,
+                    bottomStart = 50.dp,
+                    bottomEnd = 0.dp
+                ),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = if (displayStats) onPrimary else primary
+                ),
+                border = BorderStroke(1.dp, primary)
+            ) {
+                Text(text = "List", color = if (displayStats) primary else onPrimary)
+            }
+            Button(
+                onClick = viewModel::toggleExpenseDisplayStyle,
+                shape = RoundedCornerShape(
+                    topStart = 0.dp,
+                    topEnd = 50.dp,
+                    bottomStart = 0.dp,
+                    bottomEnd = 50.dp
+                ),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = if (displayStats) primary else onPrimary
+                ),
+                border = BorderStroke(1.dp, primary)
+            ) {
+                Text(text = "Stats", color = if (displayStats) onPrimary else primary)
+            }
         }
         Spacer(modifier = modifier.weight(1f))
         CalendarDropdown(viewModel = viewModel)

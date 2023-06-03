@@ -24,7 +24,8 @@ data class HomeScreenUIState(
     val chosenDate: String = DateUtils.getCurrentDay(),
     val expenseSheetDisplayed: Boolean = false,
     val categoriesSheetDisplayed: Boolean = false,
-    val settingsSheetDisplayed: Boolean = false
+    val settingsSheetDisplayed: Boolean = false,
+    val expenseStatsDisplayed: Boolean = false
 ) {
     val chosenDateIdx: Int
         get() = calendarOption.datesList.indexOf(chosenDate)
@@ -125,6 +126,11 @@ class HomeScreenViewModel(
 
     fun saveExpensesToFile() {
         saveFileRepository.saveExpensesToFile(expenses)
+    }
+
+    fun toggleExpenseDisplayStyle() {
+        val expenseStatsDisplayed = _uiState.value.expenseStatsDisplayed
+        _uiState.update { it.copy(expenseStatsDisplayed = !expenseStatsDisplayed) }
     }
 
 }
