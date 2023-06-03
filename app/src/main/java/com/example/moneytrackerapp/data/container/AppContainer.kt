@@ -8,11 +8,14 @@ import com.example.moneytrackerapp.data.repo.ExpenseRepository
 import com.example.moneytrackerapp.data.repo.ExpenseRepositoryImpl
 import com.example.moneytrackerapp.data.repo.LimitRepository
 import com.example.moneytrackerapp.data.repo.LimitRepositoryImpl
+import com.example.moneytrackerapp.data.repo.SaveFileRepository
+import com.example.moneytrackerapp.data.repo.WorkerManagerSaveFileRepository
 
 interface AppContainer {
     val expenseRepository: ExpenseRepository
     val categoryRepository: CategoryRepository
     val limitRepository: LimitRepository
+    val saveFileRepository: SaveFileRepository
 }
 
 class AppDataContainer(private val context: Context) : AppContainer {
@@ -27,6 +30,10 @@ class AppDataContainer(private val context: Context) : AppContainer {
 
     override val limitRepository: LimitRepository by lazy {
         LimitRepositoryImpl(AppDatabase.getDatabase(context).getLimitDao())
+    }
+
+    override val saveFileRepository: SaveFileRepository by lazy {
+        WorkerManagerSaveFileRepository(context)
     }
 
 }

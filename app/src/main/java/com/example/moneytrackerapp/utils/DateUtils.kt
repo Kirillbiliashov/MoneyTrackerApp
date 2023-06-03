@@ -1,6 +1,7 @@
 package com.example.moneytrackerapp.utils
 
 import java.time.DayOfWeek
+import java.time.Instant
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.ZoneId
@@ -77,5 +78,10 @@ object DateUtils {
     fun LocalDateTime.toMillis() = atZone(ZoneId.systemDefault())
         .toInstant()
         .toEpochMilli()
+
+    fun toLocalDate(millis: Long): LocalDate {
+        val instant = Instant.ofEpochMilli(millis)
+        return instant.atZone(ZoneId.systemDefault()).toLocalDate()
+    }
 
 }

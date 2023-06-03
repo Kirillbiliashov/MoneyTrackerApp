@@ -13,7 +13,11 @@ import com.example.moneytrackerapp.ui.settingsscreen.SettingsScreenViewModel
 object ViewModelProvider {
     val Factory = viewModelFactory {
         initializer {
-            HomeScreenViewModel(moneyTrackerApp().container.expenseRepository)
+            HomeScreenViewModel(
+                expenseRepository =
+                moneyTrackerApp().container.expenseRepository,
+                saveFileRepository = moneyTrackerApp().container.saveFileRepository
+            )
         }
         initializer {
             ExpenseScreenViewModel(

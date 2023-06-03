@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.moneytrackerapp.data.entity.ExpenseTuple
 import com.example.moneytrackerapp.data.repo.ExpenseRepository
+import com.example.moneytrackerapp.data.repo.SaveFileRepository
 import com.example.moneytrackerapp.utils.CalendarOption
 import com.example.moneytrackerapp.utils.DateUtils
 import com.example.moneytrackerapp.utils.DateUtils.toMillis
@@ -33,7 +34,10 @@ data class HomeScreenUIState(
 }
 
 
-class HomeScreenViewModel(private val expenseRepository: ExpenseRepository) : ViewModel() {
+class HomeScreenViewModel(
+    private val expenseRepository: ExpenseRepository,
+    private val saveFileRepository: SaveFileRepository
+) : ViewModel() {
 
     private var _uiState = MutableStateFlow(HomeScreenUIState())
     val uiState: StateFlow<HomeScreenUIState> = _uiState
@@ -117,6 +121,10 @@ class HomeScreenViewModel(private val expenseRepository: ExpenseRepository) : Vi
 
     fun hideSettingsSheet() {
         _uiState.update { it.copy(settingsSheetDisplayed = false) }
+    }
+
+    fun saveExpensesToFile() {
+        saveFileRepository.saveExpensesToFile(expenses)
     }
 
 }

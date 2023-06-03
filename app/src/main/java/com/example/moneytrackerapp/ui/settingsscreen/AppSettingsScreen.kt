@@ -1,6 +1,7 @@
 package com.example.moneytrackerapp.ui.settingsscreen
 
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -39,6 +40,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
@@ -63,13 +65,17 @@ import java.util.TimeZone
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun SettingsSheetContent(viewModel: SettingsScreenViewModel,
-    onButtonClick: () -> Unit, modifier: Modifier = Modifier) {
+fun SettingsSheetContent(
+    viewModel: SettingsScreenViewModel,
+    onSaveFileClick: () -> Unit,
+    onButtonClick: () -> Unit, modifier: Modifier = Modifier
+) {
     var limitDialogDisplayed by remember { mutableStateOf(false) }
     Column(
         modifier = modifier
             .fillMaxSize()
-            .padding(horizontal = 8.dp)
+            .padding(horizontal = 8.dp),
+        horizontalAlignment = Alignment.CenterHorizontally
     ) {
         if (limitDialogDisplayed) {
             val sheetState = rememberSheetState(
@@ -121,6 +127,12 @@ fun SettingsSheetContent(viewModel: SettingsScreenViewModel,
             )
         }
         LimitSection(viewModel = viewModel, onAddLimit = { limitDialogDisplayed = true })
+        Text(
+            text = "Save expenses to a file",
+            textDecoration = TextDecoration.Underline,
+            fontSize = 16.sp,
+            modifier = modifier.clickable(onClick = onSaveFileClick)
+        )
     }
 
 }
