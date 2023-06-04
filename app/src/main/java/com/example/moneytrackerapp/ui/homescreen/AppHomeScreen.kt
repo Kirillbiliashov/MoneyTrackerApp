@@ -1,5 +1,6 @@
 package com.example.moneytrackerapp.ui.homescreen
 
+import android.widget.Toast
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Canvas
@@ -20,11 +21,11 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
-import androidx.compose.foundation.pager.PageSize
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.DateRange
@@ -46,27 +47,25 @@ import androidx.compose.material3.SheetState
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.State
 import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.BlendMode
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.CompositingStrategy
-import androidx.compose.ui.graphics.drawscope.DrawStyle
 import androidx.compose.ui.graphics.drawscope.Fill
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -160,12 +159,16 @@ fun HomeScreenData(
     )
     Spacer(modifier = Modifier.height(40.dp))
     Text(
-        text = "$${String.format("%.2f", expenseSum)}",
+        text = "$${expenseSum.formatOutput()}",
         style = MaterialTheme.typography.displayLarge
     )
     Spacer(modifier = Modifier.height(40.dp))
+    val modifier = Modifier
+        .fillMaxWidth()
+        .fillMaxHeight(0.83f)
+        .expensesGraphics()
     if (expenseStatsDisplayed) {
-        ExpensesStats(expenses = expenses)
+        ExpensesStats(expenses = expenses, modifier = modifier)
     } else {
         ExpensesList(expenses = expenses, modifier = modifier)
     }
@@ -177,41 +180,59 @@ fun HomeScreenData(
 
 @Composable
 fun ExpensesStats(expenses: List<ExpenseTuple>, modifier: Modifier = Modifier) {
-    Column(modifier = modifier.fillMaxSize().padding(8.dp)) {
-        Text(
-            text = "Allocation of expenses by categories:",
-            style = MaterialTheme.typography.displayLarge, fontSize = 20.sp
-        )
+    LazyColumn(modifier = modifier) {
         val categoryExpensesMap = expenses.groupBy { it.categoryName }
         val chartValues = categoryExpensesMap.values.map { it.sumOf { e -> e.sum } }
         val chartColors = colorsList(categoryExpensesMap.size)
-        Column {
-            categoryExpensesMap.keys.forEachIndexed { idx, category ->
-                Row(
-                    modifier = modifier
-                        .fillMaxWidth()
-                        .padding(8.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Spacer(
-                        modifier = modifier
-                            .size(30.dp)
-                            .background(chartColors[idx])
-                    )
-                    Text(
-                        text = " - $category", style = MaterialTheme.typography.displayMedium,
-                        fontSize = 16.sp
-                    )
+        val barChartMap = chartValues.zip(categoryExpensesMap.keys.toList()).toMap()
+        if (chartValues.isNotEmpty()) {
+            item {
+                Text(
+                    text = "Allocation of expenses by categories:",
+                    style = MaterialTheme.typography.displayLarge, fontSize = 22.sp
+                )
+                Spacer(modifier = modifier.height(16.dp))
+                Text(
+                    text = "Bar chart:",
+                    style = MaterialTheme.typography.displayLarge, fontSize = 20.sp
+                )
+                if (chartValues.isNotEmpty()) {
+                    BarChart(data = barChartMap, maxValue = chartValues.max())
                 }
+                Text(
+                    text = "Pie chart:",
+                    style = MaterialTheme.typography.displayLarge, fontSize = 20.sp
+                )
+                Column {
+                    categoryExpensesMap.keys.forEachIndexed { idx, category ->
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(8.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Spacer(
+                                modifier = Modifier
+                                    .size(30.dp)
+                                    .background(chartColors[idx])
+                            )
+                            Text(
+                                text = " - $category",
+                                style = MaterialTheme.typography.displayMedium,
+                                fontSize = 16.sp
+                            )
+                        }
+                    }
+                }
+                PieChart(
+                    modifier = Modifier
+                        .padding(20.dp)
+                        .fillMaxWidth(),
+                    colors = chartColors,
+                    inputValues = chartValues
+                )
             }
         }
-        PieChart(
-            modifier = Modifier
-                .padding(20.dp)
-                .fillMaxWidth(),
-            colors = chartColors,
-            inputValues = chartValues
-        )
     }
 }
 
@@ -247,7 +268,85 @@ fun PieChart(
             }
 
         }
+    }
+}
 
+@Composable
+fun BarChart(data: Map<Double, String>, maxValue: Double, modifier: Modifier = Modifier) {
+    val ctxt = LocalContext.current
+    Column(
+        modifier = Modifier
+            .padding(10.dp)
+            .fillMaxWidth()
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(200.dp),
+            verticalAlignment = Alignment.Bottom,
+            horizontalArrangement = Arrangement.Start
+        ) {
+            Box(
+                modifier = Modifier
+                    .fillMaxHeight()
+                    .width(50.dp),
+                contentAlignment = Alignment.BottomCenter
+            ) {
+                var i = 1f
+                while (i >= 0.25) {
+                    Column(
+                        modifier = Modifier.fillMaxHeight(),
+                        verticalArrangement = Arrangement.Bottom
+                    ) {
+                        Text(text = (maxValue * i).formatOutput())
+                        Spacer(modifier = Modifier.fillMaxHeight(i))
+                    }
+                    i -= 0.25f
+                }
+            }
+            Box(
+                modifier = Modifier
+                    .fillMaxHeight()
+                    .width(2.dp)
+                    .background(Color.Black)
+            )
+            data.forEach {
+                Box(
+                    modifier = Modifier
+                        .padding(start = 20.dp)
+                        .clip(RoundedCornerShape(20.dp))
+                        .width(30.dp)
+                        .fillMaxHeight((it.key / maxValue).toFloat())
+                        .background(MaterialTheme.colorScheme.primary)
+                        .clickable {
+                            Toast
+                                .makeText(ctxt, it.key.toString(), Toast.LENGTH_SHORT)
+                                .show()
+                        }
+                )
+            }
+        }
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(2.dp)
+                .background(Color.Black)
+        )
+        Row(
+            modifier = Modifier
+                .padding(start = 72.dp)
+                .fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(10.dp)
+        ) {
+            data.values.forEach {
+                Text(
+                    text = it,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.width(40.dp),
+                    fontSize = 14.sp
+                )
+            }
+        }
     }
 }
 
@@ -405,10 +504,7 @@ fun ExpensesList(
     val categoryExpensesMap = expenses.groupBy { it.categoryName }
     LazyColumn(
         modifier = modifier
-            .fillMaxWidth()
-            .fillMaxHeight(0.83f)
-            .padding(bottom = 16.dp)
-            .expenseListGraphics(),
+            .padding(bottom = 16.dp),
         contentPadding = PaddingValues(8.dp)
     ) {
         items(items = categoryExpensesMap.keys.toList()) { category ->
@@ -426,7 +522,7 @@ fun ExpensesList(
     }
 }
 
-private fun Modifier.expenseListGraphics() =
+private fun Modifier.expensesGraphics() =
     graphicsLayer(compositingStrategy = CompositingStrategy.Offscreen)
         .drawWithContent {
             drawContent()
@@ -536,6 +632,8 @@ private fun List<Limit>.findHitLimit(
                 expenseSum >= it.sum
     }
 }
+
+private fun Number.formatOutput() = String.format("%.2f", this)
 
 private fun colorsList(listSize: Int) = List(size = listSize) { randomColor() }
 
