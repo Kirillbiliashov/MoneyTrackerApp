@@ -17,7 +17,8 @@ object ViewModelProvider {
                 expenseRepository =
                 moneyTrackerApp().container.expenseRepository,
                 saveFileRepository = moneyTrackerApp().container.saveFileRepository,
-                currencyRepository = moneyTrackerApp().container.currencyRepository
+                currencyRepository = moneyTrackerApp().container.currencyRepository,
+                userCurrencyRepository = moneyTrackerApp().container.userCurrencyRepository
             )
         }
         initializer {

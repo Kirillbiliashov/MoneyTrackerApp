@@ -6,6 +6,7 @@ import com.example.moneytrackerapp.data.entity.ExpenseTuple
 import com.example.moneytrackerapp.data.repo.CurrencyRepository
 import com.example.moneytrackerapp.data.repo.ExpenseRepository
 import com.example.moneytrackerapp.data.repo.SaveFileRepository
+import com.example.moneytrackerapp.data.repo.UserCurrencyRepository
 import com.example.moneytrackerapp.utils.CalendarOption
 import com.example.moneytrackerapp.utils.Currency
 import com.example.moneytrackerapp.utils.CurrencyRate
@@ -17,8 +18,6 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import java.time.LocalDate
 import java.time.LocalDateTime
-import java.time.ZoneId
-import java.time.format.DateTimeFormatter
 
 data class HomeScreenUIState(
     val dropdownExpanded: Boolean = false,
@@ -42,7 +41,8 @@ data class HomeScreenUIState(
 class HomeScreenViewModel(
     private val expenseRepository: ExpenseRepository,
     private val saveFileRepository: SaveFileRepository,
-    private val currencyRepository: CurrencyRepository
+    private val currencyRepository: CurrencyRepository,
+    private val userCurrencyRepository: UserCurrencyRepository
 ) : ViewModel() {
 
     private var _uiState = MutableStateFlow(HomeScreenUIState())
@@ -58,7 +58,9 @@ class HomeScreenViewModel(
                 }
         }
         viewModelScope.launch {
-            println(currencyRepository.getCurrencyRates(Currency.USD))
+            userCurrencyRepository.currency.collect {
+                updateChosenCurrency(newCurrency = Currency.valueOf(it))
+            }
         }
     }
 
@@ -153,6 +155,10 @@ class HomeScreenViewModel(
                     )
                 )
             }
+        }
+        viewModelScope.launch {
+            println("saving to preferences...")
+            userCurrencyRepository.saveCurrency(newCurrency.toString())
         }
     }
 
