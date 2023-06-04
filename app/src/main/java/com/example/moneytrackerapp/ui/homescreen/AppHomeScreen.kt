@@ -5,7 +5,6 @@ import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -41,6 +40,7 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.SheetState
@@ -49,7 +49,6 @@ import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.State
 import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -72,6 +71,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.moneytrackerapp.data.entity.Category
 import com.example.moneytrackerapp.data.entity.ExpenseTuple
 import com.example.moneytrackerapp.data.entity.Limit
+import com.example.moneytrackerapp.data.entity.localDateRangeString
 import com.example.moneytrackerapp.ui.ViewModelProvider
 import com.example.moneytrackerapp.ui.categoriesscreen.CategoriesScreenViewModel
 import com.example.moneytrackerapp.ui.categoriesscreen.CategoriesSheetContent
@@ -151,8 +151,8 @@ fun HomeScreenData(
     val expenses =
         uiState.value.displayExpenses.filterByCategories(chosenCategories)
     val expenseSum = expenses.fold(0.00) { acc, value -> acc + value.sum }
-    val limit = limits.value.findHitLimit(expenseSum, uiState.value.localDateTimeRange)
-    if (limit != null) onHitLimit(limit)
+    val limit = limits.value.findLimit(expenseSum, uiState.value.localDateTimeRange)
+    if (limit != null && expenseSum >= limit.sum) onHitLimit(limit)
     HomeScreenHeader(
         displayStats = expenseStatsDisplayed,
         viewModel = viewModel
@@ -163,14 +163,14 @@ fun HomeScreenData(
         style = MaterialTheme.typography.displayLarge
     )
     Spacer(modifier = Modifier.height(40.dp))
-    val modifier = Modifier
+    val expensesModifier = Modifier
         .fillMaxWidth()
         .fillMaxHeight(0.83f)
         .expensesGraphics()
     if (expenseStatsDisplayed) {
-        ExpensesStats(expenses = expenses, modifier = modifier)
+        ExpensesStats(expenses = expenses, limit = limit, modifier = expensesModifier)
     } else {
-        ExpensesList(expenses = expenses, modifier = modifier)
+        ExpensesList(expenses = expenses, modifier = expensesModifier)
     }
     HomeScreenButtons(
         onShowCategoriesSheet = viewModel::displayCategoriesSheet,
@@ -179,8 +179,10 @@ fun HomeScreenData(
 }
 
 @Composable
-fun ExpensesStats(expenses: List<ExpenseTuple>, modifier: Modifier = Modifier) {
-    LazyColumn(modifier = modifier) {
+fun ExpensesStats(expenses: List<ExpenseTuple>,
+                  limit: Limit?,
+                  modifier: Modifier = Modifier) {
+    LazyColumn(modifier = modifier.padding(horizontal = 16.dp)) {
         val categoryExpensesMap = expenses.groupBy { it.categoryName }
         val chartValues = categoryExpensesMap.values.map { it.sumOf { e -> e.sum } }
         val chartColors = colorsList(categoryExpensesMap.size)
@@ -203,33 +205,68 @@ fun ExpensesStats(expenses: List<ExpenseTuple>, modifier: Modifier = Modifier) {
                     text = "Pie chart:",
                     style = MaterialTheme.typography.displayLarge, fontSize = 20.sp
                 )
-                Column {
-                    categoryExpensesMap.keys.forEachIndexed { idx, category ->
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(8.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Spacer(
-                                modifier = Modifier
-                                    .size(30.dp)
-                                    .background(chartColors[idx])
-                            )
-                            Text(
-                                text = " - $category",
-                                style = MaterialTheme.typography.displayMedium,
-                                fontSize = 16.sp
-                            )
-                        }
-                    }
-                }
+                PieChartHeader(
+                    categoryExpensesMap = categoryExpensesMap,
+                    chartColors = chartColors
+                )
                 PieChart(
                     modifier = Modifier
                         .padding(20.dp)
                         .fillMaxWidth(),
                     colors = chartColors,
                     inputValues = chartValues
+                )
+            }
+        }
+        if (limit != null) {
+            item {
+                Text(
+                    text = "Limit (${limit.localDateRangeString()}): ",
+                    style = MaterialTheme.typography.displayLarge, fontSize = 20.sp,
+                    modifier = modifier.padding(bottom = 16.dp)
+                )
+                LinearProgressIndicator(
+                    progress = (chartValues.sum() / limit.sum).toFloat(),
+                    color = MaterialTheme.colorScheme.primary,
+                    trackColor = MaterialTheme.colorScheme.primaryContainer,
+                    modifier = modifier
+                        .height(15.dp)
+                        .width(150.dp)
+                        .clip(RoundedCornerShape(20.dp))
+                )
+                Text(
+                    text = "${chartValues.sum().formatOutput()}/${limit.sum.formatOutput()}",
+                    modifier = modifier.padding(bottom = 32.dp, top = 8.dp),
+                    fontSize = 16.sp
+                )
+            }
+        }
+    }
+}
+
+@Composable
+fun PieChartHeader(
+    categoryExpensesMap: Map<String, List<ExpenseTuple>>,
+    chartColors: List<Color>,
+    modifier: Modifier = Modifier
+) {
+    Column {
+        categoryExpensesMap.keys.forEachIndexed { idx, category ->
+            Row(
+                modifier = modifier
+                    .fillMaxWidth()
+                    .padding(8.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Spacer(
+                    modifier = modifier
+                        .size(30.dp)
+                        .background(chartColors[idx])
+                )
+                Text(
+                    text = " - $category",
+                    style = MaterialTheme.typography.displayMedium,
+                    fontSize = 16.sp
                 )
             }
         }
@@ -273,79 +310,98 @@ fun PieChart(
 
 @Composable
 fun BarChart(data: Map<Double, String>, maxValue: Double, modifier: Modifier = Modifier) {
-    val ctxt = LocalContext.current
     Column(
-        modifier = Modifier
+        modifier = modifier
             .padding(10.dp)
             .fillMaxWidth()
     ) {
         Row(
-            modifier = Modifier
+            modifier = modifier
                 .fillMaxWidth()
                 .height(200.dp),
             verticalAlignment = Alignment.Bottom,
             horizontalArrangement = Arrangement.Start
         ) {
-            Box(
-                modifier = Modifier
-                    .fillMaxHeight()
-                    .width(50.dp),
-                contentAlignment = Alignment.BottomCenter
-            ) {
-                var i = 1f
-                while (i >= 0.25) {
-                    Column(
-                        modifier = Modifier.fillMaxHeight(),
-                        verticalArrangement = Arrangement.Bottom
-                    ) {
-                        Text(text = (maxValue * i).formatOutput())
-                        Spacer(modifier = Modifier.fillMaxHeight(i))
-                    }
-                    i -= 0.25f
-                }
-            }
-            Box(
-                modifier = Modifier
-                    .fillMaxHeight()
-                    .width(2.dp)
-                    .background(Color.Black)
-            )
-            data.forEach {
-                Box(
-                    modifier = Modifier
-                        .padding(start = 20.dp)
-                        .clip(RoundedCornerShape(20.dp))
-                        .width(30.dp)
-                        .fillMaxHeight((it.key / maxValue).toFloat())
-                        .background(MaterialTheme.colorScheme.primary)
-                        .clickable {
-                            Toast
-                                .makeText(ctxt, it.key.toString(), Toast.LENGTH_SHORT)
-                                .show()
-                        }
-                )
-            }
+            BarChartVerticalScale(maxValue = maxValue)
+            BarChartBars(data = data, maxValue = maxValue)
         }
+        BarChartHorizontalScale(items = data.values.toList())
+    }
+}
+
+@Composable
+fun BarChartBars(data: Map<Double, String>,
+                 maxValue: Double,
+                 modifier: Modifier = Modifier) {
+    val ctxt = LocalContext.current
+    data.forEach {
         Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(2.dp)
-                .background(Color.Black)
+            modifier = modifier
+                .padding(start = 20.dp)
+                .clip(RoundedCornerShape(20.dp))
+                .width(30.dp)
+                .fillMaxHeight((it.key / maxValue).toFloat())
+                .background(MaterialTheme.colorScheme.primary)
+                .clickable {
+                    Toast
+                        .makeText(ctxt, it.key.toString(), Toast.LENGTH_SHORT)
+                        .show()
+                }
         )
-        Row(
-            modifier = Modifier
-                .padding(start = 72.dp)
-                .fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(10.dp)
-        ) {
-            data.values.forEach {
-                Text(
-                    text = it,
-                    textAlign = TextAlign.Center,
-                    modifier = Modifier.width(40.dp),
-                    fontSize = 14.sp
-                )
+    }
+}
+
+@Composable
+fun BarChartVerticalScale(maxValue: Double,
+    modifier: Modifier = Modifier) {
+    Box(
+        modifier = modifier
+            .fillMaxHeight()
+            .width(50.dp),
+        contentAlignment = Alignment.BottomCenter
+    ) {
+        var i = 1f
+        while (i >= 0.25) {
+            Column(
+                modifier = modifier.fillMaxHeight(),
+                verticalArrangement = Arrangement.Bottom
+            ) {
+                Text(text = (maxValue * i).formatOutput())
+                Spacer(modifier = Modifier.fillMaxHeight(i))
             }
+            i -= 0.25f
+        }
+    }
+    Box(
+        modifier = Modifier
+            .fillMaxHeight()
+            .width(2.dp)
+            .background(Color.Black)
+    )
+}
+
+@Composable
+fun BarChartHorizontalScale(items: List<String>,
+    modifier: Modifier = Modifier) {
+    Box(
+        modifier = modifier
+            .fillMaxWidth()
+            .height(2.dp)
+            .background(Color.Black)
+    )
+    Row(
+        modifier = modifier
+            .padding(start = 72.dp)
+            .fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(10.dp)
+    ) {
+        items.forEach {
+            Text(
+                text = it,
+                textAlign = TextAlign.Center,
+                modifier = Modifier.width(40.dp),
+                fontSize = 14.sp
+            )
         }
     }
 }
@@ -620,7 +676,7 @@ private fun String.lowercase(startIdx: Int) =
 private fun List<ExpenseTuple>.filterByCategories(categories: List<Category>) =
     filter { s -> categories.any { it.name == s.categoryName } }
 
-private fun List<Limit>.findHitLimit(
+private fun List<Limit>.findLimit(
     expenseSum: Double,
     dateTimeRange: Pair<LocalDateTime, LocalDateTime>
 ): Limit? {
@@ -628,8 +684,7 @@ private fun List<Limit>.findHitLimit(
     val rangeEnd = dateTimeRange.second.toMillis()
     return find {
         rangeStart >= it.startDate &&
-                rangeEnd <= it.endDte &&
-                expenseSum >= it.sum
+                rangeEnd <= it.endDte
     }
 }
 
