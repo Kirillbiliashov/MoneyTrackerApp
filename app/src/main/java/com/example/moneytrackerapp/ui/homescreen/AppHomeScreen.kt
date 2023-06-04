@@ -5,6 +5,7 @@ import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -79,6 +80,8 @@ import com.example.moneytrackerapp.ui.expensescreen.ExpenseSheetContent
 import com.example.moneytrackerapp.ui.settingsscreen.SettingsScreenViewModel
 import com.example.moneytrackerapp.ui.settingsscreen.SettingsSheetContent
 import com.example.moneytrackerapp.utils.CalendarOption
+import com.example.moneytrackerapp.utils.Currency
+import com.example.moneytrackerapp.utils.CurrencyRate
 import com.example.moneytrackerapp.utils.DateUtils.toMillis
 import com.maxkeppeker.sheets.core.models.base.rememberSheetState
 import com.maxkeppeler.sheets.calendar.CalendarDialog
@@ -101,12 +104,16 @@ fun HomeScreenContent(
     val settingsViewModel: SettingsScreenViewModel =
         viewModel(factory = ViewModelProvider.Factory)
     val uiState = viewModel.uiState.collectAsState()
+    val currencyRate = uiState.value.currentCurrencyRate
     SheetContent(
         sheetState = sheetState,
         visible = uiState.value.expenseSheetDisplayed,
         onHideSheet = viewModel::hideExpenseSheet
     ) {
-        ExpenseSheetContent(onSaveClick = viewModel::hideExpenseSheet)
+        ExpenseSheetContent(
+            onSaveClick = viewModel::hideExpenseSheet,
+            currencyRate = currencyRate
+        )
     }
     SheetContent(
         sheetState = sheetState,
@@ -127,7 +134,10 @@ fun HomeScreenContent(
         SettingsSheetContent(
             viewModel = settingsViewModel,
             onSaveFileClick = viewModel::saveExpensesToFile,
-            onButtonClick = viewModel::hideSettingsSheet
+            onButtonClick = viewModel::hideSettingsSheet,
+            currencyRate = currencyRate,
+            onUpdateCurrency = viewModel::updateChosenCurrency
+
         )
     }
     HomeScreenData(
@@ -147,6 +157,7 @@ fun HomeScreenData(
     modifier: Modifier = Modifier
 ) {
     val uiState = viewModel.uiState.collectAsState()
+    val currencyRate = uiState.value.currentCurrencyRate
     val expenseStatsDisplayed = uiState.value.expenseStatsDisplayed
     val expenses =
         uiState.value.displayExpenses.filterByCategories(chosenCategories)
@@ -159,7 +170,7 @@ fun HomeScreenData(
     )
     Spacer(modifier = Modifier.height(40.dp))
     Text(
-        text = "$${expenseSum.formatOutput()}",
+        text = "${currencyRate.currency.sign}${(expenseSum / currencyRate.rate).formatOutput()}",
         style = MaterialTheme.typography.displayLarge
     )
     Spacer(modifier = Modifier.height(40.dp))
@@ -168,9 +179,13 @@ fun HomeScreenData(
         .fillMaxHeight(0.83f)
         .expensesGraphics()
     if (expenseStatsDisplayed) {
-        ExpensesStats(expenses = expenses, limit = limit, modifier = expensesModifier)
+        ExpensesStats(expenses = expenses, limit = limit,
+            currencyRate = currencyRate,
+            modifier = expensesModifier)
     } else {
-        ExpensesList(expenses = expenses, modifier = expensesModifier)
+        ExpensesList(expenses = expenses,
+            currencyRate = currencyRate,
+            modifier = expensesModifier)
     }
     HomeScreenButtons(
         onShowCategoriesSheet = viewModel::displayCategoriesSheet,
@@ -180,6 +195,7 @@ fun HomeScreenData(
 
 @Composable
 fun ExpensesStats(expenses: List<ExpenseTuple>,
+                  currencyRate: CurrencyRate,
                   limit: Limit?,
                   modifier: Modifier = Modifier) {
     LazyColumn(modifier = modifier.padding(horizontal = 16.dp)) {
@@ -199,7 +215,9 @@ fun ExpensesStats(expenses: List<ExpenseTuple>,
                     style = MaterialTheme.typography.displayLarge, fontSize = 20.sp
                 )
                 if (chartValues.isNotEmpty()) {
-                    BarChart(data = barChartMap, maxValue = chartValues.max())
+                    BarChart(data = barChartMap,
+                        currencyRate = currencyRate,
+                        maxValue = chartValues.max())
                 }
                 Text(
                     text = "Pie chart:",
@@ -235,7 +253,8 @@ fun ExpensesStats(expenses: List<ExpenseTuple>,
                         .clip(RoundedCornerShape(20.dp))
                 )
                 Text(
-                    text = "${chartValues.sum().formatOutput()}/${limit.sum.formatOutput()}",
+                    text = "${currencyRate.currency.sign}${(chartValues.sum() / currencyRate.rate).formatOutput()}" +
+                            "/${(limit.sum / currencyRate.rate).formatOutput()}",
                     modifier = modifier.padding(bottom = 32.dp, top = 8.dp),
                     fontSize = 16.sp
                 )
@@ -309,7 +328,9 @@ fun PieChart(
 }
 
 @Composable
-fun BarChart(data: Map<Double, String>, maxValue: Double, modifier: Modifier = Modifier) {
+fun BarChart(data: Map<Double, String>,
+             currencyRate: CurrencyRate,
+             maxValue: Double, modifier: Modifier = Modifier) {
     Column(
         modifier = modifier
             .padding(10.dp)
@@ -322,7 +343,9 @@ fun BarChart(data: Map<Double, String>, maxValue: Double, modifier: Modifier = M
             verticalAlignment = Alignment.Bottom,
             horizontalArrangement = Arrangement.Start
         ) {
-            BarChartVerticalScale(maxValue = maxValue)
+            BarChartVerticalScale(
+                currencyRate = currencyRate,
+                maxValue = maxValue)
             BarChartBars(data = data, maxValue = maxValue)
         }
         BarChartHorizontalScale(items = data.values.toList())
@@ -352,12 +375,14 @@ fun BarChartBars(data: Map<Double, String>,
 }
 
 @Composable
-fun BarChartVerticalScale(maxValue: Double,
+fun BarChartVerticalScale(
+    currencyRate: CurrencyRate,
+    maxValue: Double,
     modifier: Modifier = Modifier) {
     Box(
         modifier = modifier
             .fillMaxHeight()
-            .width(50.dp),
+            .width(65.dp),
         contentAlignment = Alignment.BottomCenter
     ) {
         var i = 1f
@@ -366,7 +391,7 @@ fun BarChartVerticalScale(maxValue: Double,
                 modifier = modifier.fillMaxHeight(),
                 verticalArrangement = Arrangement.Bottom
             ) {
-                Text(text = (maxValue * i).formatOutput())
+                Text(text = "${currencyRate.currency.sign}${((maxValue * i) / currencyRate.rate).formatOutput()}")
                 Spacer(modifier = Modifier.fillMaxHeight(i))
             }
             i -= 0.25f
@@ -391,7 +416,7 @@ fun BarChartHorizontalScale(items: List<String>,
     )
     Row(
         modifier = modifier
-            .padding(start = 72.dp)
+            .padding(start = 87.dp)
             .fillMaxWidth(),
         horizontalArrangement = Arrangement.spacedBy(10.dp)
     ) {
@@ -555,6 +580,7 @@ fun DropdownMenuOptions(
 @Composable
 fun ExpensesList(
     expenses: List<ExpenseTuple>,
+    currencyRate: CurrencyRate,
     modifier: Modifier = Modifier
 ) {
     val categoryExpensesMap = expenses.groupBy { it.categoryName }
@@ -571,7 +597,7 @@ fun ExpensesList(
             ) {
                 Text(text = category, style = MaterialTheme.typography.displayMedium)
                 categoryExpensesMap[category]?.forEach {
-                    ExpenseCard(expense = it)
+                    ExpenseCard(expense = it, currencyRate = currencyRate)
                 }
             }
         }
@@ -627,7 +653,9 @@ fun HomeScreenFAB(
 }
 
 @Composable
-fun ExpenseCard(expense: ExpenseTuple, modifier: Modifier = Modifier) {
+fun ExpenseCard(expense: ExpenseTuple,
+                currencyRate: CurrencyRate,
+                modifier: Modifier = Modifier) {
     Card(
         modifier = Modifier
             .padding(vertical = 8.dp, horizontal = 4.dp)
@@ -643,14 +671,16 @@ fun ExpenseCard(expense: ExpenseTuple, modifier: Modifier = Modifier) {
                 .fillMaxSize()
                 .padding(8.dp)
         ) {
-            ExpenseCardContent(expense = expense)
+            ExpenseCardContent(expense = expense, currencyRate = currencyRate)
         }
         Spacer(modifier = modifier.weight(1F))
     }
 }
 
 @Composable
-fun ExpenseCardContent(expense: ExpenseTuple, modifier: Modifier = Modifier) {
+fun ExpenseCardContent(expense: ExpenseTuple,
+                       currencyRate: CurrencyRate,
+                       modifier: Modifier = Modifier) {
     Row(
         modifier = modifier
             .fillMaxSize(),
@@ -658,7 +688,7 @@ fun ExpenseCardContent(expense: ExpenseTuple, modifier: Modifier = Modifier) {
     ) {
         Text(text = expense.name, fontSize = 18.sp)
         Spacer(modifier = modifier.weight(1F))
-        Text(text = expense.sum.toString(), fontSize = 18.sp)
+        Text(text = "${currencyRate.currency.sign}${(expense.sum / currencyRate.rate).formatOutput()}", fontSize = 18.sp)
     }
     if (expense.note != null) {
         Text(
@@ -688,7 +718,7 @@ private fun List<Limit>.findLimit(
     }
 }
 
-private fun Number.formatOutput() = String.format("%.2f", this)
+fun Number.formatOutput() = String.format("%.2f", this)
 
 private fun colorsList(listSize: Int) = List(size = listSize) { randomColor() }
 

@@ -3,9 +3,12 @@ package com.example.moneytrackerapp.ui.homescreen
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.moneytrackerapp.data.entity.ExpenseTuple
+import com.example.moneytrackerapp.data.repo.CurrencyRepository
 import com.example.moneytrackerapp.data.repo.ExpenseRepository
 import com.example.moneytrackerapp.data.repo.SaveFileRepository
 import com.example.moneytrackerapp.utils.CalendarOption
+import com.example.moneytrackerapp.utils.Currency
+import com.example.moneytrackerapp.utils.CurrencyRate
 import com.example.moneytrackerapp.utils.DateUtils
 import com.example.moneytrackerapp.utils.DateUtils.toMillis
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -22,6 +25,7 @@ data class HomeScreenUIState(
     val displayExpenses: List<ExpenseTuple> = listOf(),
     val calendarOption: CalendarOption = CalendarOption.DAILY,
     val chosenDate: String = DateUtils.getCurrentDay(),
+    val currentCurrencyRate: CurrencyRate = CurrencyRate(),
     val expenseSheetDisplayed: Boolean = false,
     val categoriesSheetDisplayed: Boolean = false,
     val settingsSheetDisplayed: Boolean = false,
@@ -37,7 +41,8 @@ data class HomeScreenUIState(
 
 class HomeScreenViewModel(
     private val expenseRepository: ExpenseRepository,
-    private val saveFileRepository: SaveFileRepository
+    private val saveFileRepository: SaveFileRepository,
+    private val currencyRepository: CurrencyRepository
 ) : ViewModel() {
 
     private var _uiState = MutableStateFlow(HomeScreenUIState())
@@ -51,6 +56,9 @@ class HomeScreenViewModel(
                     expenses = it
                     updateUIStateExpenses()
                 }
+        }
+        viewModelScope.launch {
+            println(currencyRepository.getCurrencyRates(Currency.USD))
         }
     }
 
@@ -131,6 +139,32 @@ class HomeScreenViewModel(
     fun toggleExpenseDisplayStyle() {
         val expenseStatsDisplayed = _uiState.value.expenseStatsDisplayed
         _uiState.update { it.copy(expenseStatsDisplayed = !expenseStatsDisplayed) }
+    }
+
+    fun updateChosenCurrency(newCurrency: Currency) {
+        viewModelScope.launch {
+            val json = currencyRepository.getCurrencyRates(newCurrency)
+            val rate = updateRate(json)
+            _uiState.update {
+                it.copy(
+                    currentCurrencyRate = CurrencyRate(
+                        currency = newCurrency,
+                        rate = rate
+                    )
+                )
+            }
+        }
+    }
+
+    private fun updateRate(jsonString: String): Double {
+        val lines = jsonString.split(",\n")
+        val usdString = lines.findLast { it.contains("\"usd\"") }
+        return if (usdString != null) {
+            val keyValue = usdString.split(":")
+            keyValue[1].trim().toDouble()
+        } else {
+            throw IllegalStateException("Unable to parse currency json data")
+        }
     }
 
 }

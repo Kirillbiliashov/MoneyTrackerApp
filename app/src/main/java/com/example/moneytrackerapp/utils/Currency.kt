@@ -1,5 +1,14 @@
 package com.example.moneytrackerapp.utils
 
 enum class Currency {
-    UAH, USD, EUR
+    USD {
+        override val sign = "$"
+    },
+    EUR {
+        override val sign = "€"
+    },
+    UAH {
+        override val sign = "₴"
+    };
+    abstract val sign: String
 }

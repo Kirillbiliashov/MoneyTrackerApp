@@ -9,6 +9,7 @@ import com.example.moneytrackerapp.data.entity.Category
 import com.example.moneytrackerapp.data.entity.Limit
 import com.example.moneytrackerapp.data.repo.LimitRepository
 import com.example.moneytrackerapp.ui.expensescreen.ExpenseScreenUIState
+import com.example.moneytrackerapp.utils.Currency
 import com.example.moneytrackerapp.utils.DateUtils.toMillis
 import com.maxkeppeker.sheets.core.models.base.rememberSheetState
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -25,7 +26,8 @@ import java.time.ZoneId
 data class SettingsScreenUIState(
     val currentLimitSum: Double = 0.00,
     val chosenDates: List<LocalDate> = listOf(),
-    val limitsDisplayed: Boolean = false
+    val limitsDisplayed: Boolean = false,
+    val currenciesDisplayed: Boolean = false
 )
 
 class SettingsScreenViewModel(private val limitRepository: LimitRepository) : ViewModel() {
@@ -53,9 +55,9 @@ class SettingsScreenViewModel(private val limitRepository: LimitRepository) : Vi
         _uiState.update { it.copy(chosenDates = newDates) }
     }
 
-    fun saveLimit() {
+    fun saveLimit(rate: Double) {
         viewModelScope.launch {
-            val limit = _uiState.value.toLimit()
+            val limit = _uiState.value.toLimit(rate)
             limitRepository.saveLimit(limit)
         }
     }
@@ -65,15 +67,20 @@ class SettingsScreenViewModel(private val limitRepository: LimitRepository) : Vi
         _uiState.update { it.copy(limitsDisplayed = !limitsDisplayed) }
     }
 
+    fun toggleDisplayCurrencies() {
+        val currenciesDisplayed = _uiState.value.currenciesDisplayed
+        _uiState.update { it.copy(currenciesDisplayed = !currenciesDisplayed) }
+    }
+
 }
 
-private fun SettingsScreenUIState.toLimit(): Limit {
+private fun SettingsScreenUIState.toLimit(rate: Double): Limit {
     val startDate = LocalDateTime.of(chosenDates.first(), LocalTime.MIN)
     val endDate = LocalDateTime.of(chosenDates.last(), LocalTime.MAX)
     val startDateMillis = startDate.toMillis()
     val endDateMillis = endDate.toMillis()
     return Limit(
-        sum = currentLimitSum,
+        sum = currentLimitSum * rate,
         startDate = startDateMillis,
         endDte = endDateMillis
     )

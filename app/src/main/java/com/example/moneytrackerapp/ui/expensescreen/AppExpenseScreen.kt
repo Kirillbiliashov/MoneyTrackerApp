@@ -27,19 +27,27 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.moneytrackerapp.data.entity.Category
 import com.example.moneytrackerapp.ui.ViewModelProvider
+import com.example.moneytrackerapp.utils.CurrencyRate
 
 @Composable
-fun ExpenseSheetContent(onSaveClick: () -> Unit, modifier: Modifier = Modifier) {
+fun ExpenseSheetContent(
+    onSaveClick: () -> Unit,
+    currencyRate: CurrencyRate,
+    modifier: Modifier = Modifier) {
     Column(
         modifier = modifier.fillMaxSize(),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        AddExpenseForm(onSaveClick = onSaveClick)
+        AddExpenseForm(onSaveClick = onSaveClick, currencyRate = currencyRate)
     }
 }
 
 @Composable
-fun AddExpenseForm(onSaveClick: () -> Unit, modifier: Modifier = Modifier) {
+fun AddExpenseForm(
+    onSaveClick: () -> Unit,
+    currencyRate: CurrencyRate,
+    modifier: Modifier = Modifier
+) {
     val viewModel: ExpenseScreenViewModel = viewModel(factory = ViewModelProvider.Factory)
     val uiState = viewModel.uiState.collectAsState()
     Text(
@@ -56,7 +64,7 @@ fun AddExpenseForm(onSaveClick: () -> Unit, modifier: Modifier = Modifier) {
         value = uiState.value.sum.toString(),
         onValueChange = viewModel::updateExpenseSum,
         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-        label = { Text(text = "Sum") },
+        label = { Text(text = "Sum (${currencyRate.currency})") },
         modifier = modifier.padding(vertical = 8.dp)
     )
     CategoryDropdown(expanded = uiState.value.dropdownExpanded,
@@ -69,7 +77,7 @@ fun AddExpenseForm(onSaveClick: () -> Unit, modifier: Modifier = Modifier) {
         modifier = modifier.padding(vertical = 8.dp)
     )
     Button(onClick = {
-        viewModel.saveExpense()
+        viewModel.saveExpense(currencyRate.rate)
         onSaveClick()
     }, modifier = modifier.padding(top = 8.dp)) {
         Text(text = "Save")

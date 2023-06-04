@@ -72,17 +72,17 @@ class ExpenseScreenViewModel(
         _uiState.update { it.copy(dropdownExpanded = false) }
     }
 
-    fun saveExpense() {
+    fun saveExpense(rate: Double) {
         viewModelScope.launch {
-            expenseRepo.saveExpense(_uiState.value.toExpense())
+            expenseRepo.saveExpense(_uiState.value.toExpense(rate))
         }
     }
 
 }
 
-private fun ExpenseScreenUIState.toExpense(): Expense = Expense(
+private fun ExpenseScreenUIState.toExpense(rate: Double): Expense = Expense(
     name = this.name,
     date = System.currentTimeMillis(),
-    sum = this.sum,
+    sum = this.sum * rate,
     categoryId = this.category?.id ?: throw IllegalStateException("Category must be chosen")
 )
