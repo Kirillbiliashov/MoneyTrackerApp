@@ -20,7 +20,6 @@ import java.time.LocalDate
 import java.time.LocalDateTime
 
 data class HomeScreenUIState(
-    val dropdownExpanded: Boolean = false,
     val displayExpenses: List<ExpenseTuple> = listOf(),
     val calendarOption: CalendarOption = CalendarOption.DAILY,
     val chosenDate: String = DateUtils.getCurrentDay(),
@@ -31,10 +30,16 @@ data class HomeScreenUIState(
     val expenseStatsDisplayed: Boolean = false
 ) {
     val chosenDateIdx: Int
-        get() = calendarOption.datesList.indexOf(chosenDate)
+        get() = calendarOption.datesList.indexOf(chosenDate) - scrollOffset
 
     val localDateTimeRange: Pair<LocalDateTime, LocalDateTime>
         get() = calendarOption.parseDateStr(chosenDate)
+
+    private val scrollOffset = when (calendarOption) {
+        CalendarOption.DAILY -> 3
+        CalendarOption.WEEKLY -> 2
+        CalendarOption.MONTHLY -> 3
+    }
 }
 
 
@@ -81,18 +86,9 @@ class HomeScreenViewModel(
         _uiState.update {
             it.copy(
                 calendarOption = newCalendarOption,
-                dropdownExpanded = false,
                 chosenDate = newCalendarOption.currentDate
             )
         }
-    }
-
-    fun expandDropdown() {
-        _uiState.update { it.copy(dropdownExpanded = true) }
-    }
-
-    fun dismissDropdown() {
-        _uiState.update { it.copy(dropdownExpanded = false) }
     }
 
     fun updateChosenDate(newDate: String) {

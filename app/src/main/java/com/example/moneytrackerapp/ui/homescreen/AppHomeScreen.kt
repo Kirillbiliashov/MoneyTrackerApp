@@ -5,6 +5,7 @@ import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -23,6 +24,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyItemScope
+import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
@@ -49,6 +51,11 @@ import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.State
 import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -85,6 +92,7 @@ import com.example.moneytrackerapp.utils.formatSum
 import com.maxkeppeker.sheets.core.models.base.rememberSheetState
 import com.maxkeppeler.sheets.calendar.CalendarDialog
 import com.maxkeppeler.sheets.calendar.models.CalendarSelection
+import kotlinx.coroutines.launch
 import java.lang.Integer.min
 import java.time.LocalDateTime
 import kotlin.random.Random
@@ -159,6 +167,7 @@ fun HomeScreenData(
     if (limit != null && expenseSum >= limit.sum) onHitLimit(limit)
     HomeScreenHeader(
         displayStats = expenseStatsDisplayed,
+        uiState = uiState,
         viewModel = viewModel
     )
     Spacer(modifier = Modifier.height(40.dp))
@@ -320,12 +329,22 @@ fun LimitInfo(
 @Composable
 fun HomeScreenHeader(
     displayStats: Boolean,
+    uiState: State<HomeScreenUIState>,
     viewModel: HomeScreenViewModel, modifier: Modifier = Modifier
 ) {
+    val listState = rememberLazyListState(
+        initialFirstVisibleItemIndex = uiState.value.chosenDateIdx
+    )
+    val coroutineScope = rememberCoroutineScope()
     val sheetState = rememberSheetState()
     CalendarDialog(
         state = sheetState,
-        selection = CalendarSelection.Date { viewModel.updateChosenDate(it) })
+        selection = CalendarSelection.Date {
+            viewModel.updateChosenDate(it)
+            coroutineScope.launch {
+                listState.animateScrollToItem(uiState.value.chosenDateIdx)
+            }
+        })
     Row(
         horizontalArrangement = Arrangement.Center,
         verticalAlignment = Alignment.CenterVertically,
@@ -339,9 +358,27 @@ fun HomeScreenHeader(
             displayStats = displayStats
         )
         Spacer(modifier = modifier.weight(1f))
-        CalendarDropdown(viewModel = viewModel)
+        CalendarDropdown(
+            onChangeOption = {
+                viewModel.changeDropdownOption(it)
+                coroutineScope.launch {
+                    listState.animateScrollToItem(uiState.value.chosenDateIdx)
+                }
+            },
+            calendarOption = uiState.value.calendarOption
+        )
     }
-    DateItems(viewModel = viewModel)
+    DateItems(
+        onDateClick = {
+            viewModel.updateChosenDate(it)
+            coroutineScope.launch {
+                listState.animateScrollToItem(uiState.value.chosenDateIdx)
+            }
+        },
+        chosenDate = uiState.value.chosenDate,
+        calendarOption = uiState.value.calendarOption,
+        listState = listState
+    )
 }
 
 @Composable
@@ -387,46 +424,59 @@ fun ExpenseModeSwitch(
 }
 
 @Composable
-fun CalendarDropdown(viewModel: HomeScreenViewModel, modifier: Modifier = Modifier) {
-    val uiState = viewModel.uiState.collectAsState()
+fun CalendarDropdown(
+    onChangeOption: (Int) -> Unit,
+    calendarOption: CalendarOption,
+    modifier: Modifier = Modifier
+) {
+    var expanded by remember { mutableStateOf(false) }
     Box(modifier = Modifier.padding(end = 8.dp)) {
         Text(
-            text = uiState.value.calendarOption.toString().lowercase(1),
-            modifier = modifier.clickable(onClick = { viewModel.expandDropdown() }),
+            text = calendarOption.toString().lowercase(1),
+            modifier = modifier.clickable(onClick = { expanded = true }),
             style = MaterialTheme.typography.displayMedium
         )
         DropdownMenu(
-            expanded = uiState.value.dropdownExpanded,
-            onDismissRequest = { viewModel.dismissDropdown() },
+            expanded = expanded,
+            onDismissRequest = { expanded = false },
             modifier = Modifier.fillMaxWidth(0.3f)
         ) {
-            DropdownMenuOptions(onItemClick = { viewModel.changeDropdownOption(it) })
+            DropdownMenuOptions(onItemClick = {
+                expanded = false
+                onChangeOption(it)
+            })
         }
     }
 }
 
 @Composable
-fun DateItems(viewModel: HomeScreenViewModel, modifier: Modifier = Modifier) {
-    val uiState = viewModel.uiState.collectAsState()
-    val listState = rememberLazyListState(
-        initialFirstVisibleItemIndex = uiState.value.chosenDateIdx - 3
-    )
+fun DateItems(
+    onDateClick: (String) -> Unit,
+    calendarOption: CalendarOption,
+    chosenDate: String,
+    listState: LazyListState,
+    modifier: Modifier = Modifier
+) {
     LazyRow(
         state = listState,
         modifier = modifier
             .fillMaxWidth()
-            .height(50.dp)
+            .height(72.dp)
             .dateItemsGraphics(),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        items(items = uiState.value.calendarOption.datesList) { item ->
-            val color = if (item == uiState.value.chosenDate)
+        items(items = calendarOption.datesList) { item ->
+            val color = if (item == chosenDate)
                 MaterialTheme.colorScheme.inversePrimary
             else Color.Transparent
             Text(
-                text = item, fontSize = 16.sp,
+                text = item, fontSize = when (calendarOption) {
+                    CalendarOption.DAILY -> 16.sp
+                    CalendarOption.MONTHLY -> 18.sp
+                    CalendarOption.WEEKLY -> 12.5.sp
+                },
                 modifier = modifier
-                    .clickable(onClick = { viewModel.updateChosenDate(item) })
+                    .clickable(onClick = { onDateClick(item) })
                     .background(color, shape = RoundedCornerShape(100.dp))
                     .padding(8.dp)
             )

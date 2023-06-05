@@ -26,8 +26,7 @@ import java.time.ZoneId
 data class SettingsScreenUIState(
     val currentLimitSum: Double = 0.00,
     val chosenDates: List<LocalDate> = listOf(),
-    val limitsDisplayed: Boolean = false,
-    val currenciesDisplayed: Boolean = false
+    val limitsDisplayed: Boolean = false
 )
 
 class SettingsScreenViewModel(
@@ -68,11 +67,6 @@ class SettingsScreenViewModel(
     fun toggleDisplayLimits() {
         val limitsDisplayed = _uiState.value.limitsDisplayed
         _uiState.update { it.copy(limitsDisplayed = !limitsDisplayed) }
-    }
-
-    fun toggleDisplayCurrencies() {
-        val currenciesDisplayed = _uiState.value.currenciesDisplayed
-        _uiState.update { it.copy(currenciesDisplayed = !currenciesDisplayed) }
     }
 
 }

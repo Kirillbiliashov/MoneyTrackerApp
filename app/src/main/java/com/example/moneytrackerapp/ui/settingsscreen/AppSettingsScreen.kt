@@ -76,7 +76,6 @@ fun SettingsSheetContent(
     currencyRate: CurrencyRate,
     onUpdateCurrency: (Currency) -> Unit
 ) {
-    val uiState = viewModel.uiState.collectAsState()
     var limitDialogDisplayed by remember { mutableStateOf(false) }
     Column(
         modifier = modifier
@@ -87,7 +86,6 @@ fun SettingsSheetContent(
         if (limitDialogDisplayed) {
             AddLimitDialog(
                 viewModel = viewModel,
-                uiState = uiState,
                 onHideDialog = { limitDialogDisplayed = false },
                 currencyRate = currencyRate
             )
@@ -97,9 +95,7 @@ fun SettingsSheetContent(
             onAddLimit = { limitDialogDisplayed = true })
         CurrenciesSection(
             onRadioButtonClick = { onUpdateCurrency(it) },
-            onArrowIconClick = viewModel::toggleDisplayCurrencies,
-            currencyRate = currencyRate,
-            currenciesDisplayed = uiState.value.currenciesDisplayed
+            currencyRate = currencyRate
         )
         Text(
             text = "Save expenses to a file",
@@ -111,16 +107,17 @@ fun SettingsSheetContent(
 }
 
 @Composable
-fun CurrenciesSection(onRadioButtonClick: (Currency) -> Unit,
-                      onArrowIconClick: () -> Unit,
-                      currencyRate: CurrencyRate,
-                      currenciesDisplayed: Boolean,
-    modifier: Modifier = Modifier) {
+fun CurrenciesSection(
+    onRadioButtonClick: (Currency) -> Unit,
+    currencyRate: CurrencyRate,
+    modifier: Modifier = Modifier
+) {
+    var currenciesDisplayed by remember { mutableStateOf(false) }
     Row(verticalAlignment = Alignment.CenterVertically) {
         Text(text = "Currency", style = MaterialTheme.typography.displayMedium)
         val icon = if (currenciesDisplayed) Icons.Default.KeyboardArrowUp
         else Icons.Default.KeyboardArrowDown
-        IconButton(onClick = onArrowIconClick) {
+        IconButton(onClick = { currenciesDisplayed = !currenciesDisplayed }) {
             Icon(imageVector = icon, contentDescription = null)
         }
         Spacer(modifier = modifier.weight(1f))
@@ -138,7 +135,7 @@ fun CurrenciesSection(onRadioButtonClick: (Currency) -> Unit,
             Currency.values().forEach {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     RadioButton(selected = currencyRate.currency == it,
-                        onClick = { onRadioButtonClick(it)})
+                        onClick = { onRadioButtonClick(it) })
                     Text(text = it.toString())
                 }
             }
@@ -150,11 +147,11 @@ fun CurrenciesSection(onRadioButtonClick: (Currency) -> Unit,
 @Composable
 fun AddLimitDialog(
     viewModel: SettingsScreenViewModel,
-    uiState: State<SettingsScreenUIState>,
     onHideDialog: () -> Unit,
     currencyRate: CurrencyRate,
     modifier: Modifier = Modifier
 ) {
+    val uiState = viewModel.uiState.collectAsState()
     val sheetState = rememberSheetState(
         onCloseRequest = {
             if (uiState.value.chosenDates.isNotEmpty()) {

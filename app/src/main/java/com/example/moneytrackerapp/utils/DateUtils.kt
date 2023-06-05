@@ -62,7 +62,7 @@ object DateUtils {
     fun getCurrentWeek(): String {
         val monday = TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY)
         val currDate = LocalDate.now().with(monday)
-        val nextDate = currDate.plusWeeks(1)
+        val nextDate = currDate.plusWeeks(1).minusDays(1)
         return getWeekStr(currDate, nextDate)
     }
 
