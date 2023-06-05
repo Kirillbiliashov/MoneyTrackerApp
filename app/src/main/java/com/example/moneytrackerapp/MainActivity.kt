@@ -91,7 +91,10 @@ fun MoneyTrackerApp(modifier: Modifier = Modifier) {
     }
 }
 
-private suspend fun displayLimitSnackbar(limit: Limit, snackbarHostState: SnackbarHostState) {
+private suspend fun displayLimitSnackbar(
+    limit: Limit,
+    snackbarHostState: SnackbarHostState
+) {
     snackbarHostState.showSnackbar(
         message = "You have hit the limit of ${limit.sum} on ${limit.localDateRangeString()}",
         actionLabel = "OK",

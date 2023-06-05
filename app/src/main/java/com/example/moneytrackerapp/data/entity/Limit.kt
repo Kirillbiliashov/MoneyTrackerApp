@@ -5,6 +5,7 @@ import androidx.room.Entity
 import androidx.room.PrimaryKey
 import java.text.SimpleDateFormat
 import java.util.Date
+import java.util.Locale
 import java.util.TimeZone
 
 @Entity(tableName = "limit")
@@ -17,7 +18,7 @@ data class Limit(
 
 
 fun Limit.localDateRangeString(): String {
-    val dateFormat = SimpleDateFormat("dd.MM.yyyy")
+    val dateFormat = SimpleDateFormat("dd.MM.yyyy", Locale.US)
     dateFormat.timeZone = TimeZone.getDefault()
     val startDate = Date(startDate)
     val endDate = Date(endDte)

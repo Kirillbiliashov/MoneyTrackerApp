@@ -28,6 +28,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.RadioButton
+import androidx.compose.material3.SheetState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.State
@@ -50,10 +51,9 @@ import androidx.compose.ui.window.DialogProperties
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.moneytrackerapp.data.entity.Limit
 import com.example.moneytrackerapp.data.entity.localDateRangeString
-import com.example.moneytrackerapp.ui.ViewModelProvider
-import com.example.moneytrackerapp.ui.homescreen.formatOutput
 import com.example.moneytrackerapp.utils.Currency
 import com.example.moneytrackerapp.utils.CurrencyRate
+import com.example.moneytrackerapp.utils.formatSum
 import com.maxkeppeker.sheets.core.models.base.Header
 import com.maxkeppeker.sheets.core.models.base.rememberSheetState
 import com.maxkeppeler.sheets.calendar.CalendarDialog
@@ -68,7 +68,6 @@ import java.time.format.DateTimeFormatter
 import java.util.Date
 import java.util.TimeZone
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SettingsSheetContent(
     viewModel: SettingsScreenViewModel,
@@ -78,7 +77,6 @@ fun SettingsSheetContent(
     onUpdateCurrency: (Currency) -> Unit
 ) {
     val uiState = viewModel.uiState.collectAsState()
-    val currenciesDisplayed = uiState.value.currenciesDisplayed
     var limitDialogDisplayed by remember { mutableStateOf(false) }
     Column(
         modifier = modifier
@@ -87,86 +85,22 @@ fun SettingsSheetContent(
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         if (limitDialogDisplayed) {
-            val sheetState = rememberSheetState(
-                onCloseRequest = {
-                    if (viewModel.uiState.value.chosenDates.isNotEmpty()) {
-                        viewModel.saveLimit(currencyRate.rate)
-                    }
-                    limitDialogDisplayed = false
-                })
-            Dialog(
-                onDismissRequest = { limitDialogDisplayed = false },
-                content = {
-                    Card(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .fillMaxHeight(0.75f)
-                    ) {
-                        Column(
-                            modifier = Modifier
-                                .padding(16.dp)
-                                .fillMaxSize(),
-                            horizontalAlignment = Alignment.CenterHorizontally
-                        ) {
-                            Text(
-                                text = "Add Limit",
-                                style = MaterialTheme.typography.displayMedium,
-                                fontWeight = FontWeight.W500
-                            )
-                            Divider(thickness = 2.dp)
-                            LimitSumTextField(
-                                currency = currencyRate.currency,
-                                uiState = uiState,
-                                onValueChange = viewModel::updateLimitSum
-                            )
-                            CalendarView(
-                                sheetState = sheetState,
-                                selection = CalendarSelection.Dates { viewModel.updateChosenDates(it) },
-                                config = CalendarConfig(
-                                    disabledDates = listOf(LocalDate.now()),
-                                    disabledTimeline = CalendarTimeline.PAST
-                                )
-                            )
-                        }
-                    }
-                },
-                properties = DialogProperties(
-                    dismissOnBackPress = true,
-                    dismissOnClickOutside = true
-                )
+            AddLimitDialog(
+                viewModel = viewModel,
+                uiState = uiState,
+                onHideDialog = { limitDialogDisplayed = false },
+                currencyRate = currencyRate
             )
         }
         LimitSection(viewModel = viewModel,
             currencyRate = currencyRate,
             onAddLimit = { limitDialogDisplayed = true })
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Text(text = "Currency", style = MaterialTheme.typography.displayMedium)
-            val icon = if (currenciesDisplayed) Icons.Default.KeyboardArrowUp
-            else Icons.Default.KeyboardArrowDown
-            IconButton(onClick = viewModel::toggleDisplayCurrencies) {
-                Icon(imageVector = icon, contentDescription = null)
-            }
-            Spacer(modifier = modifier.weight(1f))
-            Text(
-                text = currencyRate.currency.toString(),
-                style = MaterialTheme.typography.displayMedium
-            )
-        }
-        if (uiState.value.currenciesDisplayed) {
-            Column(
-                modifier = modifier
-                    .selectableGroup()
-                    .fillMaxWidth()
-            ) {
-                Currency.values().forEach {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        RadioButton(selected = currencyRate.currency == it,
-                            onClick = { onUpdateCurrency(it) })
-                        Text(text = it.toString())
-                    }
-                }
-            }
-        }
+        CurrenciesSection(
+            onRadioButtonClick = { onUpdateCurrency(it) },
+            onArrowIconClick = viewModel::toggleDisplayCurrencies,
+            currencyRate = currencyRate,
+            currenciesDisplayed = uiState.value.currenciesDisplayed
+        )
         Text(
             text = "Save expenses to a file",
             textDecoration = TextDecoration.Underline,
@@ -175,6 +109,119 @@ fun SettingsSheetContent(
         )
     }
 }
+
+@Composable
+fun CurrenciesSection(onRadioButtonClick: (Currency) -> Unit,
+                      onArrowIconClick: () -> Unit,
+                      currencyRate: CurrencyRate,
+                      currenciesDisplayed: Boolean,
+    modifier: Modifier = Modifier) {
+    Row(verticalAlignment = Alignment.CenterVertically) {
+        Text(text = "Currency", style = MaterialTheme.typography.displayMedium)
+        val icon = if (currenciesDisplayed) Icons.Default.KeyboardArrowUp
+        else Icons.Default.KeyboardArrowDown
+        IconButton(onClick = onArrowIconClick) {
+            Icon(imageVector = icon, contentDescription = null)
+        }
+        Spacer(modifier = modifier.weight(1f))
+        Text(
+            text = currencyRate.currency.toString(),
+            style = MaterialTheme.typography.displayMedium
+        )
+    }
+    if (currenciesDisplayed) {
+        Column(
+            modifier = modifier
+                .selectableGroup()
+                .fillMaxWidth()
+        ) {
+            Currency.values().forEach {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    RadioButton(selected = currencyRate.currency == it,
+                        onClick = { onRadioButtonClick(it)})
+                    Text(text = it.toString())
+                }
+            }
+        }
+    }
+}
+
+
+@Composable
+fun AddLimitDialog(
+    viewModel: SettingsScreenViewModel,
+    uiState: State<SettingsScreenUIState>,
+    onHideDialog: () -> Unit,
+    currencyRate: CurrencyRate,
+    modifier: Modifier = Modifier
+) {
+    val sheetState = rememberSheetState(
+        onCloseRequest = {
+            if (uiState.value.chosenDates.isNotEmpty()) {
+                viewModel.saveLimit(currencyRate.rate)
+            }
+            onHideDialog()
+        })
+    Dialog(
+        onDismissRequest = onHideDialog,
+        content = {
+            AddLimitDialogContent(
+                viewModel = viewModel,
+                uiState = uiState,
+                currency = currencyRate.currency,
+                sheetState = sheetState
+            )
+        },
+        properties = DialogProperties(
+            dismissOnBackPress = true,
+            dismissOnClickOutside = true
+        )
+    )
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun AddLimitDialogContent(
+    viewModel: SettingsScreenViewModel,
+    uiState: State<SettingsScreenUIState>,
+    currency: Currency,
+    sheetState: com.maxkeppeker.sheets.core.models.base.SheetState,
+    modifier: Modifier = Modifier
+) {
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .fillMaxHeight(0.75f)
+    ) {
+        Column(
+            modifier = Modifier
+                .padding(16.dp)
+                .fillMaxSize(),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Text(
+                text = "Add Limit",
+                style = MaterialTheme.typography.displayMedium,
+                fontWeight = FontWeight.W500
+            )
+            Divider(thickness = 2.dp)
+            LimitSumTextField(
+                currency = currency,
+                uiState = uiState,
+                onValueChange = viewModel::updateLimitSum
+            )
+            CalendarView(
+                sheetState = sheetState,
+                selection = CalendarSelection.Dates { viewModel.updateChosenDates(it) },
+                config = CalendarConfig(
+                    disabledDates = listOf(LocalDate.now()),
+                    disabledTimeline = CalendarTimeline.PAST
+                )
+            )
+        }
+    }
+}
+
 
 @Composable
 fun LimitSumTextField(
@@ -220,21 +267,29 @@ fun LimitSection(
     if (uiState.value.limitsDisplayed) {
         LazyColumn() {
             items(limits.value) {
-                Row(modifier = modifier.padding(8.dp)) {
-                    Text(
-                        text = it.localDateRangeString(),
-                        fontSize = 16.sp,
-                        style = MaterialTheme.typography.displayMedium
-                    )
-                    Spacer(modifier = modifier.weight(1F))
-                    Text(
-                        text = currencyRate.currency.sign +
-                                (it.sum / currencyRate.rate).formatOutput(),
-                        fontSize = 16.sp,
-                        style = MaterialTheme.typography.displayMedium
-                    )
-                }
+                LimitItem(limit = it, currencyRate = currencyRate)
             }
         }
+    }
+}
+
+@Composable
+fun LimitItem(
+    limit: Limit,
+    currencyRate: CurrencyRate,
+    modifier: Modifier = Modifier
+) {
+    Row(modifier = modifier.padding(8.dp)) {
+        Text(
+            text = limit.localDateRangeString(),
+            fontSize = 16.sp,
+            style = MaterialTheme.typography.displayMedium
+        )
+        Spacer(modifier = modifier.weight(1F))
+        Text(
+            text = currencyRate.formatSum(limit.sum),
+            fontSize = 16.sp,
+            style = MaterialTheme.typography.displayMedium
+        )
     }
 }

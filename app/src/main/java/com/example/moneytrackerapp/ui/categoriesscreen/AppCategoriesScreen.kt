@@ -64,7 +64,10 @@ fun CategoriesSheetContent(
         )
         Spacer(modifier = modifier.weight(1f))
         AddDialogButton(onClick = viewModel::showDialog)
-        Button(onClick = onButtonClick, modifier = modifier.padding(bottom = 64.dp)) {
+        Button(
+            onClick = onButtonClick,
+            modifier = modifier.padding(bottom = 64.dp)
+        ) {
             Text(text = "Ok")
         }
     }
@@ -73,7 +76,8 @@ fun CategoriesSheetContent(
 @Composable
 fun AddDialogButton(onClick: () -> Unit, modifier: Modifier = Modifier) {
     FloatingActionButton(
-        onClick = onClick, modifier = modifier
+        onClick = onClick,
+        modifier = modifier
             .padding(vertical = 20.dp)
             .width(100.dp)
     ) {
@@ -96,8 +100,13 @@ fun CategoriesList(
             ) {
                 Text(text = it.name, fontSize = 18.sp)
                 Spacer(modifier = modifier.weight(1f))
-                if (!viewModel.allCategoriesChosen && chosenCategories.contains(it)) {
-                    Icon(imageVector = Icons.Default.Check, contentDescription = null)
+                if (!viewModel.allCategoriesChosen &&
+                    chosenCategories.contains(it)
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Check,
+                        contentDescription = null
+                    )
                 }
             }
         }
@@ -114,7 +123,7 @@ fun AddCategoryDialog(
         onDismissRequest = viewModel::dismissDialog,
         content = {
             Card(
-                modifier = Modifier
+                modifier = modifier
                     .fillMaxWidth()
                     .fillMaxHeight(0.5f)
             ) {

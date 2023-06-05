@@ -15,7 +15,9 @@ data class CategoriesScreenUIState(
     val addCategoryName: String = ""
 )
 
-class CategoriesScreenViewModel(private val categoryRepo: CategoryRepository) : ViewModel() {
+class CategoriesScreenViewModel(
+    private val categoryRepo: CategoryRepository
+) : ViewModel() {
 
     private var _uiState = MutableStateFlow(CategoriesScreenUIState())
     val uiState: StateFlow<CategoriesScreenUIState> = _uiState
@@ -27,25 +29,22 @@ class CategoriesScreenViewModel(private val categoryRepo: CategoryRepository) : 
 
     init {
         viewModelScope.launch {
-            categoryRepo.getAllCategoriesFlow().collect {
-                categories = it
+            categoryRepo.getAllCategoriesFlow().collect { data ->
+                categories = data
                 _uiState.update { it.copy(chosenCategories = categories) }
             }
         }
     }
 
     fun changeChosenCategory(category: Category) {
-        if (allCategoriesChosen) {
-            _uiState.update { state ->
+        _uiState.update { state ->
+            if (allCategoriesChosen) {
+                state.copy(chosenCategories = listOf(category))
+            } else {
+                val chosenCategories = _uiState.value.chosenCategories
                 state.copy(
-                    chosenCategories = listOf(category)
-                )
-            }
-        } else {
-            val chosenCategories = _uiState.value.chosenCategories
-            _uiState.update { state ->
-                state.copy(
-                    chosenCategories = if (!chosenCategories.contains(category)) listOf(
+                    chosenCategories =
+                    if (!chosenCategories.contains(category)) listOf(
                         *chosenCategories.toTypedArray(),
                         category
                     ) else chosenCategories.filter { it != category }
@@ -75,8 +74,6 @@ class CategoriesScreenViewModel(private val categoryRepo: CategoryRepository) : 
 }
 
 private fun CategoriesScreenUIState.toCategory() = Category(name = addCategoryName)
-
-
 
 private fun List<Category>.equalsWithoutOrder(categories: List<Category>): Boolean {
     if (this == categories) return true

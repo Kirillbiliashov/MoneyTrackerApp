@@ -37,7 +37,8 @@ private val Context.dataStore: DataStore<Preferences> by preferencesDataStore(
 
 class AppDataContainer(private val context: Context) : AppContainer {
 
-    private val BASE_URL = "https://cdn.jsdelivr.net/gh/fawazahmed0/currency-api@1/latest/currencies/"
+    private val BASE_URL =
+        "https://cdn.jsdelivr.net/gh/fawazahmed0/currency-api@1/latest/currencies/"
 
     private val retrofit: Retrofit = Retrofit.Builder()
         .addConverterFactory(ScalarsConverterFactory.create())

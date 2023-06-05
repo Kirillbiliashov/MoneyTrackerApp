@@ -30,7 +30,9 @@ data class SettingsScreenUIState(
     val currenciesDisplayed: Boolean = false
 )
 
-class SettingsScreenViewModel(private val limitRepository: LimitRepository) : ViewModel() {
+class SettingsScreenViewModel(
+    private val limitRepository: LimitRepository
+) : ViewModel() {
 
     private val _uiState = MutableStateFlow(SettingsScreenUIState())
     val uiState: StateFlow<SettingsScreenUIState> = _uiState
@@ -41,6 +43,7 @@ class SettingsScreenViewModel(private val limitRepository: LimitRepository) : Vi
             started = SharingStarted.WhileSubscribed(5000L),
             initialValue = listOf()
         )
+        private set
 
     fun updateLimitSum(newSumStr: String) {
         val newSum = try {

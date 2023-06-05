@@ -157,7 +157,6 @@ class HomeScreenViewModel(
             }
         }
         viewModelScope.launch {
-            println("saving to preferences...")
             userCurrencyRepository.saveCurrency(newCurrency.toString())
         }
     }
