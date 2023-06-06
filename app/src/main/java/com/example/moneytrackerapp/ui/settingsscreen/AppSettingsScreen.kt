@@ -38,11 +38,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
+import com.example.moneytrackerapp.data.entity.Income
 import com.example.moneytrackerapp.data.entity.Limit
 import com.example.moneytrackerapp.data.entity.localDateRangeString
 import com.example.moneytrackerapp.utils.Currency
@@ -53,6 +55,7 @@ import com.maxkeppeler.sheets.calendar.CalendarView
 import com.maxkeppeler.sheets.calendar.models.CalendarConfig
 import com.maxkeppeler.sheets.calendar.models.CalendarSelection
 import com.maxkeppeler.sheets.calendar.models.CalendarTimeline
+import kotlinx.coroutines.flow.StateFlow
 import java.time.LocalDate
 
 @Composable
@@ -63,28 +66,20 @@ fun SettingsSheetContent(
     currencyRate: CurrencyRate,
     onUpdateCurrency: (Currency) -> Unit
 ) {
-    var limitDialogDisplayed by remember { mutableStateOf(false) }
-    var incomeDialogDisplayed by remember { mutableStateOf(false) }
     Column(
         modifier = modifier
             .fillMaxSize()
             .padding(horizontal = 16.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        if (limitDialogDisplayed) {
-            AddLimitDialog(
-                viewModel = viewModel,
-                onHideDialog = { limitDialogDisplayed = false },
-                currencyRate = currencyRate
-            )
-        }
-        if (incomeDialogDisplayed) {
-            AddIncomeDialog(onHideDialog = { incomeDialogDisplayed = false })
-        }
-        LimitSection(viewModel = viewModel,
-            currencyRate = currencyRate,
-            onAddLimit = { limitDialogDisplayed = true })
-        IncomeSection(onAddIncome = {incomeDialogDisplayed = true})
+        LimitSection(
+            viewModel = viewModel,
+            currencyRate = currencyRate
+        )
+        IncomeSection(
+            viewModel = viewModel,
+            currencyRate = currencyRate
+        )
         CurrenciesSection(
             onRadioButtonClick = { onUpdateCurrency(it) },
             currencyRate = currencyRate
@@ -140,36 +135,66 @@ fun CurrenciesSection(
 
 @Composable
 fun IncomeSection(
-    onAddIncome: () -> Unit,
+    viewModel: SettingsScreenViewModel,
+    currencyRate: CurrencyRate,
     modifier: Modifier = Modifier
 ) {
-    var incomeHistoryDisplayed by remember { mutableStateOf(false) }
-    Row(verticalAlignment = Alignment.CenterVertically) {
-        Text(text = "Income history", style = MaterialTheme.typography.displayMedium)
-        val icon = if (incomeHistoryDisplayed) Icons.Default.KeyboardArrowUp
-        else Icons.Default.KeyboardArrowDown
-        IconButton(onClick = { incomeHistoryDisplayed = !incomeHistoryDisplayed }) {
-            Icon(imageVector = icon, contentDescription = null)
-        }
-        Spacer(modifier = modifier.weight(1f))
-        Button(onClick = onAddIncome) {
-            Text(text = "Add income")
-        }
+    val uiState = viewModel.incomeUIState.collectAsState()
+    val incomeHistory = viewModel.incomeHistory.collectAsState()
+    val incomeDialogDisplayed = uiState.value.incomeDialogDisplayed
+    val incomeHistoryDisplayed = uiState.value.incomeHistoryDisplayed
+    if (incomeDialogDisplayed) {
+        AddIncomeDialog(
+            viewModel = viewModel,
+            uiState = uiState,
+            currencyRate = currencyRate,
+            onHideDialog = viewModel::hideIncomeDialog
+        )
     }
-    if (incomeHistoryDisplayed) {
-
+    Column(modifier = modifier.animateContentSize()) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Text(text = "Income history", style = MaterialTheme.typography.displayMedium)
+            val icon = if (incomeHistoryDisplayed) Icons.Default.KeyboardArrowUp
+            else Icons.Default.KeyboardArrowDown
+            IconButton(onClick = viewModel::toggleIncomeHistory) {
+                Icon(imageVector = icon, contentDescription = null)
+            }
+            Spacer(modifier = modifier.weight(1f))
+            Button(onClick = viewModel::showIncomeDialog) {
+                Text(text = "Add income")
+            }
+        }
+        if (incomeHistoryDisplayed) {
+            LazyColumn {
+                items(items = incomeHistory.value) {
+                    Row(modifier = modifier.padding(8.dp)) {
+                        Text(
+                            text = "${it.month}.${it.year}",
+                            fontSize = 16.sp,
+                            style = MaterialTheme.typography.displayMedium
+                        )
+                        Spacer(modifier = modifier.weight(1F))
+                        Text(
+                            text = currencyRate.formatSum(it.sum),
+                            fontSize = 16.sp,
+                            style = MaterialTheme.typography.displayMedium
+                        )
+                    }
+                }
+            }
+        }
     }
 }
 
 
 @Composable
 fun AddLimitDialog(
+    uiState: State<LimitUIState>,
     viewModel: SettingsScreenViewModel,
     onHideDialog: () -> Unit,
     currencyRate: CurrencyRate,
     modifier: Modifier = Modifier
 ) {
-    val uiState = viewModel.uiState.collectAsState()
     val sheetState = rememberSheetState(
         onFinishedRequest = { onHideDialog() },
     )
@@ -192,7 +217,13 @@ fun AddLimitDialog(
 }
 
 @Composable
-fun AddIncomeDialog(onHideDialog: () -> Unit, modifier: Modifier = Modifier) {
+fun AddIncomeDialog(
+    onHideDialog: () -> Unit,
+    viewModel: SettingsScreenViewModel,
+    uiState: State<IncomeUIState>,
+    currencyRate: CurrencyRate,
+    modifier: Modifier = Modifier
+) {
     Dialog(
         onDismissRequest = onHideDialog,
         content = {
@@ -208,39 +239,47 @@ fun AddIncomeDialog(onHideDialog: () -> Unit, modifier: Modifier = Modifier) {
                         .padding(8.dp)
                 ) {
                     Text(
-                        text = "Add income", style = MaterialTheme.typography.displayMedium,
+                        text = "Add income",
+                        style = MaterialTheme.typography.displayMedium,
                         fontSize = 24.sp
                     )
                     OutlinedTextField(
-                        value = "",
-                        onValueChange = {},
-                        label = {
-                            Text(text = "Income")
-                        })
+                        value = uiState.value.currentIncomeSum,
+                        onValueChange = viewModel::updateIncomeSum,
+                        isError = !uiState.value.isIncomeSumValid,
+                        label = { Text(text = "Income") },
+                        keyboardOptions = KeyboardOptions(
+                            keyboardType = KeyboardType.Number,
+                            imeAction = ImeAction.Done
+                        )
+                    )
                     Row(modifier = modifier.padding(horizontal = 24.dp, vertical = 8.dp)) {
                         Button(onClick = onHideDialog) {
                             Text(text = "Cancel")
                         }
                         Spacer(modifier = modifier.weight(1F))
-                        Button(onClick = onHideDialog) {
+                        Button(onClick = {
+                            onHideDialog()
+                            viewModel.saveIncome(currencyRate.rate)
+                        }) {
                             Text(text = "Save")
                         }
                     }
                 }
             }
-
         },
         properties = DialogProperties(
-        dismissOnBackPress = true,
-        dismissOnClickOutside = true
-    ))
+            dismissOnBackPress = true,
+            dismissOnClickOutside = true
+        )
+    )
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AddLimitDialogContent(
     viewModel: SettingsScreenViewModel,
-    uiState: State<SettingsScreenUIState>,
+    uiState: State<LimitUIState>,
     currency: Currency,
     sheetState: com.maxkeppeker.sheets.core.models.base.SheetState,
     onSaveLimit: (LocalDate) -> Unit,
@@ -284,7 +323,7 @@ fun AddLimitDialogContent(
 @Composable
 fun LimitSumTextField(
     currency: Currency,
-    uiState: State<SettingsScreenUIState>,
+    uiState: State<LimitUIState>,
     onValueChange: (String) -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -293,8 +332,7 @@ fun LimitSumTextField(
         value = uiState.value.currentLimitSum,
         onValueChange = onValueChange,
         label = { Text(text = "Sum ($currency)", fontSize = 16.sp) },
-        keyboardOptions =
-        KeyboardOptions(
+        keyboardOptions = KeyboardOptions(
             keyboardType = KeyboardType.Number,
             imeAction = ImeAction.Done
         ),
@@ -306,13 +344,22 @@ fun LimitSumTextField(
 fun LimitSection(
     viewModel: SettingsScreenViewModel,
     currencyRate: CurrencyRate,
-    onAddLimit: () -> Unit, modifier: Modifier = Modifier
+    modifier: Modifier = Modifier
 ) {
-    val uiState = viewModel.uiState.collectAsState()
+    val uiState = viewModel.limitUIState.collectAsState()
+    val limitDialogDisplayed = uiState.value.limitDialogDisplayed
     val limits = viewModel.limits.collectAsState()
     val limitsDisplayed = uiState.value.limitsDisplayed
     val icon = if (limitsDisplayed) Icons.Default.KeyboardArrowUp
     else Icons.Default.KeyboardArrowDown
+    if (limitDialogDisplayed) {
+        AddLimitDialog(
+            viewModel = viewModel,
+            uiState = uiState,
+            onHideDialog = viewModel::hideLimitDialog,
+            currencyRate = currencyRate
+        )
+    }
     Column(modifier = modifier.animateContentSize()) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Text(text = "Limits", style = MaterialTheme.typography.displayMedium)
@@ -320,7 +367,7 @@ fun LimitSection(
                 Icon(imageVector = icon, contentDescription = null)
             }
             Spacer(modifier = modifier.weight(1F))
-            Button(onClick = onAddLimit) {
+            Button(onClick = viewModel::showLimitDialog) {
                 Text(text = "Add limit")
             }
         }
@@ -332,7 +379,6 @@ fun LimitSection(
             }
         }
     }
-
 }
 
 @Composable

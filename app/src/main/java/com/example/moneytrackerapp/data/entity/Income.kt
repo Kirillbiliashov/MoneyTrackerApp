@@ -9,4 +9,11 @@ data class Income(
     val sum: Double,
     val year: Int,
     val month: Int
-)
+) {
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (other !is Income) return false
+        return this.month == other.month && this.year == other.year
+    }
+
+}

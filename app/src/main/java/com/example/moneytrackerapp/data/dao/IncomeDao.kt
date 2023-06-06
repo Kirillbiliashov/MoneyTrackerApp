@@ -9,7 +9,7 @@ import kotlinx.coroutines.flow.Flow
 @Dao
 interface IncomeDao {
 
-    @Query("SELECT * FROM income ORDER BY year,month")
+    @Query("SELECT * FROM income")
     fun getAllOrdered(): Flow<List<Income>>
 
     @Insert(entity = Income::class)

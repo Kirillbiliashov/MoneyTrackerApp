@@ -12,7 +12,10 @@ interface IncomeRepository {
 }
 
 class IncomeRepositoryImpl(private val incomeDao: IncomeDao) : IncomeRepository {
-    override fun getAll(): Flow<List<Income>> = incomeDao.getAllOrdered()
+    override fun getAll(): Flow<List<Income>> {
+        println("getting all incomes")
+        return incomeDao.getAllOrdered()
+    }
 
     override suspend fun saveIncome(income: Income) {
         incomeDao.saveIncome(income)

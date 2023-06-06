@@ -2,6 +2,7 @@ package com.example.moneytrackerapp.ui.settingsscreen
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.moneytrackerapp.data.entity.Income
 import com.example.moneytrackerapp.data.entity.Limit
 import com.example.moneytrackerapp.data.repo.IncomeRepository
 import com.example.moneytrackerapp.data.repo.LimitRepository
@@ -15,21 +16,40 @@ import kotlinx.coroutines.launch
 import java.time.LocalDate
 import java.time.LocalTime
 
-data class SettingsScreenUIState(
+data class IncomeUIState(
+    val currentIncomeSum: String = "",
+    val isIncomeSumValid: Boolean = true,
+    val incomeDialogDisplayed: Boolean = false,
+    val incomeHistoryDisplayed: Boolean = false
+)
+
+data class LimitUIState(
     val currentLimitSum: String = "",
     val isLimitSumValid: Boolean = true,
+    val limitDialogDisplayed: Boolean = false,
     val limitsDisplayed: Boolean = false
 )
 
 class SettingsScreenViewModel(
     private val limitRepository: LimitRepository,
-    private val incomeRepository: IncomeRepository,
+    private val incomeRepository: IncomeRepository
 ) : ViewModel() {
 
-    private val _uiState = MutableStateFlow(SettingsScreenUIState())
-    val uiState: StateFlow<SettingsScreenUIState> = _uiState
+    private val _limitUiState = MutableStateFlow(LimitUIState())
+    val limitUIState: StateFlow<LimitUIState> = _limitUiState
+
+    private val _incomeUIState = MutableStateFlow(IncomeUIState())
+    val incomeUIState: StateFlow<IncomeUIState> = _incomeUIState
 
     var limits: StateFlow<List<Limit>> = limitRepository.getLimitsFlow()
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000L),
+            initialValue = listOf()
+        )
+        private set
+
+    var incomeHistory: StateFlow<List<Income>> = incomeRepository.getAll()
         .stateIn(
             scope = viewModelScope,
             started = SharingStarted.WhileSubscribed(5000L),
@@ -44,7 +64,7 @@ class SettingsScreenViewModel(
         } catch (e: NumberFormatException) {
             false
         }
-        _uiState.update {
+        _limitUiState.update {
             it.copy(
                 currentLimitSum = newSumStr,
                 isLimitSumValid = isLimitSumValid
@@ -52,27 +72,78 @@ class SettingsScreenViewModel(
         }
     }
 
+    fun updateIncomeSum(newSumStr: String) {
+        val isIncomeSumValid = try {
+            newSumStr.toDouble()
+            true
+        } catch (e: NumberFormatException) {
+            false
+        }
+        _incomeUIState.update {
+            it.copy(
+                currentIncomeSum = newSumStr,
+                isIncomeSumValid = isIncomeSumValid
+            )
+        }
+    }
 
     fun saveLimit(rate: Double, chosenDate: LocalDate) {
-        if (_uiState.value.isValid()) {
+        if (_limitUiState.value.isValid()) {
             viewModelScope.launch {
-                val limit = _uiState.value.toLimit(rate, chosenDate)
+                val limit = _limitUiState.value.toLimit(rate, chosenDate)
                 limitRepository.saveLimit(limit)
             }
         }
     }
 
+    fun saveIncome(rate: Double) {
+        if (_incomeUIState.value.isValid()) {
+            viewModelScope.launch {
+                val income = _incomeUIState.value.toIncome(rate)
+                if (!incomeHistory.value.contains(income)) {
+                    incomeRepository.saveIncome(income)
+                }
+            }
+        }
+    }
+
     fun toggleDisplayLimits() {
-        val limitsDisplayed = _uiState.value.limitsDisplayed
-        _uiState.update { it.copy(limitsDisplayed = !limitsDisplayed) }
+        val limitsDisplayed = _limitUiState.value.limitsDisplayed
+        _limitUiState.update { it.copy(limitsDisplayed = !limitsDisplayed) }
+    }
+
+    fun hideIncomeDialog() {
+        _incomeUIState.update { it.copy(incomeDialogDisplayed = false) }
+    }
+
+    fun toggleIncomeHistory() {
+        val incomeHistoryDisplayed = _incomeUIState.value.incomeHistoryDisplayed
+        _incomeUIState.update {
+            it.copy(incomeHistoryDisplayed = !incomeHistoryDisplayed)
+        }
+    }
+
+    fun showIncomeDialog() {
+        _incomeUIState.update { it.copy(incomeDialogDisplayed = true) }
+    }
+
+    fun showLimitDialog() {
+        _limitUiState.update { it.copy(limitDialogDisplayed = true) }
+    }
+
+    fun hideLimitDialog() {
+        _limitUiState.update { it.copy(limitDialogDisplayed = false) }
     }
 
 }
 
-private fun SettingsScreenUIState.isValid() =
+private fun LimitUIState.isValid() =
     currentLimitSum.isNotEmpty() && isLimitSumValid
 
-private fun SettingsScreenUIState.toLimit(
+private fun IncomeUIState.isValid() =
+    currentIncomeSum.isNotEmpty() && isIncomeSumValid
+
+private fun LimitUIState.toLimit(
     rate: Double,
     chosenDate: LocalDate
 ): Limit {
@@ -82,5 +153,14 @@ private fun SettingsScreenUIState.toLimit(
         sum = currentLimitSum.toDouble() * rate,
         startDate = startDateMillis,
         endDte = endDateMillis
+    )
+}
+
+private fun IncomeUIState.toIncome(rate: Double): Income {
+    val date = LocalDate.now()
+    return Income(
+        sum = currentIncomeSum.toDouble() * rate,
+        year = date.year,
+        month = date.monthValue
     )
 }
