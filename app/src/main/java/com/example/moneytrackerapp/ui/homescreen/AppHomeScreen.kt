@@ -155,10 +155,16 @@ fun HomeScreenData(
     val expenseStatsDisplayed = uiState.value.expenseStatsDisplayed
     val expenses =
         uiState.value.displayExpenses.filterByCategories(chosenCategories)
+    val categoryExpensesMap = expenses.groupBy { it.categoryName }
     val expenseSum = expenses.fold(0.00) { acc, value -> acc + value.sum }
     val dateLimits = limits.value.findLimits(uiState.value.localDateTimeRange)
-    println(dateLimits)
-//    if (limit != null && expenseSum >= limit.sum) onHitLimit(limit) TODO: change implementation
+    dateLimits.forEach {
+        val periodExpenses = categoryExpensesMap.values.flatten()
+            .expenseSumForLimit(it)
+        if (periodExpenses >= it.sum) {
+            onHitLimit(it)
+        }
+    }
     HomeScreenHeader(
         displayStats = expenseStatsDisplayed,
         uiState = uiState,
@@ -176,7 +182,7 @@ fun HomeScreenData(
         .expensesGraphics()
     if (expenseStatsDisplayed) {
         ExpensesStats(
-            expenses = expenses,
+            categoryExpensesMap = categoryExpensesMap,
             limits = dateLimits,
             income = incomeHistory.value.currentMonthIncome(),
             currencyRate = currencyRate,
@@ -184,7 +190,7 @@ fun HomeScreenData(
         )
     } else {
         ExpensesList(
-            expenses = expenses,
+            categoryExpensesMap = categoryExpensesMap,
             currencyRate = currencyRate,
             modifier = expensesModifier
         )
@@ -229,14 +235,13 @@ fun HomeScreenButtons(
 
 @Composable
 fun ExpensesStats(
-    expenses: List<ExpenseTuple>,
+    categoryExpensesMap: Map<String, List<ExpenseTuple>>,
     currencyRate: CurrencyRate,
     limits: List<Limit>,
     income: Income?,
     modifier: Modifier = Modifier
 ) {
     LazyColumn(modifier = modifier.padding(horizontal = 16.dp)) {
-        val categoryExpensesMap = expenses.groupBy { it.categoryName }
         val chartValues = categoryExpensesMap.values.map { it.sumOf { e -> e.sum } }
         if (chartValues.isNotEmpty()) {
             item {
@@ -533,11 +538,10 @@ fun DropdownMenuOptions(
 
 @Composable
 fun ExpensesList(
-    expenses: List<ExpenseTuple>,
+    categoryExpensesMap: Map<String, List<ExpenseTuple>>,
     currencyRate: CurrencyRate,
     modifier: Modifier = Modifier
 ) {
-    val categoryExpensesMap = expenses.groupBy { it.categoryName }
     LazyColumn(
         modifier = modifier
             .padding(bottom = 16.dp),
