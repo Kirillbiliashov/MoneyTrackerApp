@@ -67,6 +67,7 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.moneytrackerapp.data.entity.Category
 import com.example.moneytrackerapp.data.entity.ExpenseTuple
+import com.example.moneytrackerapp.data.entity.Income
 import com.example.moneytrackerapp.data.entity.Limit
 import com.example.moneytrackerapp.data.entity.localDateRangeString
 import com.example.moneytrackerapp.ui.ViewModelProvider
@@ -83,6 +84,7 @@ import com.maxkeppeker.sheets.core.models.base.rememberSheetState
 import com.maxkeppeler.sheets.calendar.CalendarDialog
 import com.maxkeppeler.sheets.calendar.models.CalendarSelection
 import kotlinx.coroutines.launch
+import java.time.LocalDate
 import java.time.LocalDateTime
 import kotlin.random.Random
 
@@ -133,6 +135,7 @@ fun HomeScreenContent(
     HomeScreenData(
         chosenCategories = categoriesUiState.value.chosenCategories,
         limits = settingsViewModel.limits.collectAsState(),
+        incomeHistory = settingsViewModel.incomeHistory.collectAsState(),
         onHitLimit = onHitLimit,
         viewModel = viewModel
     )
@@ -142,6 +145,7 @@ fun HomeScreenContent(
 fun HomeScreenData(
     chosenCategories: List<Category>,
     limits: State<List<Limit>>,
+    incomeHistory: State<List<Income>>,
     onHitLimit: (Limit) -> Unit,
     viewModel: HomeScreenViewModel,
     modifier: Modifier = Modifier
@@ -152,10 +156,9 @@ fun HomeScreenData(
     val expenses =
         uiState.value.displayExpenses.filterByCategories(chosenCategories)
     val expenseSum = expenses.fold(0.00) { acc, value -> acc + value.sum }
-    println("date range: ${uiState.value.localDateTimeRange}")
     val dateLimits = limits.value.findLimits(uiState.value.localDateTimeRange)
     println(dateLimits)
-//    if (limit != null && expenseSum >= limit.sum) onHitLimit(limit)
+//    if (limit != null && expenseSum >= limit.sum) onHitLimit(limit) TODO: change implementation
     HomeScreenHeader(
         displayStats = expenseStatsDisplayed,
         uiState = uiState,
@@ -173,7 +176,9 @@ fun HomeScreenData(
         .expensesGraphics()
     if (expenseStatsDisplayed) {
         ExpensesStats(
-            expenses = expenses, limits = dateLimits,
+            expenses = expenses,
+            limits = dateLimits,
+            income = incomeHistory.value.currentMonthIncome(),
             currencyRate = currencyRate,
             modifier = expensesModifier
         )
@@ -227,6 +232,7 @@ fun ExpensesStats(
     expenses: List<ExpenseTuple>,
     currencyRate: CurrencyRate,
     limits: List<Limit>,
+    income: Income?,
     modifier: Modifier = Modifier
 ) {
     LazyColumn(modifier = modifier.padding(horizontal = 16.dp)) {
@@ -241,13 +247,24 @@ fun ExpensesStats(
                 )
             }
         }
+        if (income != null) {
+            item {
+                ProgressInfo(
+                    header = "Expenses/Income: ",
+                    currencyRate = currencyRate,
+                    expensesSum = chartValues.sum(),
+                    maxValue = income.sum
+                )
+            }
+        }
         items(items = limits) { limit ->
             val limitPeriodExpenses = categoryExpensesMap.values.flatten()
                 .expenseSumForLimit(limit)
-            LimitInfo(
-                limit = limit,
+            ProgressInfo(
+                header = "Limit (${limit.localDateRangeString()}): ",
                 currencyRate = currencyRate,
-                expensesSum = limitPeriodExpenses
+                expensesSum = limitPeriodExpenses,
+                maxValue = limit.sum
             )
         }
     }
@@ -294,19 +311,20 @@ fun ExpenseCharts(
 }
 
 @Composable
-fun LimitInfo(
-    limit: Limit,
+fun ProgressInfo(
+    header: String,
+    maxValue: Double,
     currencyRate: CurrencyRate,
     expensesSum: Double,
     modifier: Modifier = Modifier
 ) {
     Text(
-        text = "Limit (${limit.localDateRangeString()}): ",
+        text = header,
         style = MaterialTheme.typography.displayLarge, fontSize = 20.sp,
         modifier = modifier.padding(bottom = 16.dp)
     )
     LinearProgressIndicator(
-        progress = (expensesSum / limit.sum).toFloat(),
+        progress = (expensesSum / maxValue).toFloat(),
         color = MaterialTheme.colorScheme.primary,
         trackColor = MaterialTheme.colorScheme.primaryContainer,
         modifier = Modifier
@@ -316,7 +334,7 @@ fun LimitInfo(
     )
     Text(
         text = "${currencyRate.formatSum(expensesSum)}/" +
-                currencyRate.formatSum(limit.sum),
+                currencyRate.formatSum(maxValue),
         modifier = modifier.padding(bottom = 32.dp, top = 8.dp),
         fontSize = 16.sp
     )
@@ -639,6 +657,9 @@ private fun List<Limit>.findLimits(
     val rangeEnd = dateTimeRange.second.toMillis()
     return filter { it.startDate >= rangeStart && it.endDte <= rangeEnd }
 }
+
+private fun List<Income>.currentMonthIncome() =
+    find { it.month == LocalDate.now().monthValue }
 
 
 
