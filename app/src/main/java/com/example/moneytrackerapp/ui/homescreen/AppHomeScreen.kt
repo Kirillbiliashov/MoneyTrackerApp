@@ -1,15 +1,11 @@
 package com.example.moneytrackerapp.ui.homescreen
 
-import android.widget.Toast
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -20,10 +16,8 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.LazyItemScope
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
@@ -60,18 +54,14 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawWithContent
-import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.BlendMode
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.CompositingStrategy
-import androidx.compose.ui.graphics.drawscope.Fill
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -93,7 +83,6 @@ import com.maxkeppeker.sheets.core.models.base.rememberSheetState
 import com.maxkeppeler.sheets.calendar.CalendarDialog
 import com.maxkeppeler.sheets.calendar.models.CalendarSelection
 import kotlinx.coroutines.launch
-import java.lang.Integer.min
 import java.time.LocalDateTime
 import kotlin.random.Random
 
@@ -163,8 +152,10 @@ fun HomeScreenData(
     val expenses =
         uiState.value.displayExpenses.filterByCategories(chosenCategories)
     val expenseSum = expenses.fold(0.00) { acc, value -> acc + value.sum }
-    val limit = limits.value.findLimit(uiState.value.localDateTimeRange)
-    if (limit != null && expenseSum >= limit.sum) onHitLimit(limit)
+    println("date range: ${uiState.value.localDateTimeRange}")
+    val dateLimits = limits.value.findLimits(uiState.value.localDateTimeRange)
+    println(dateLimits)
+//    if (limit != null && expenseSum >= limit.sum) onHitLimit(limit)
     HomeScreenHeader(
         displayStats = expenseStatsDisplayed,
         uiState = uiState,
@@ -181,13 +172,17 @@ fun HomeScreenData(
         .fillMaxHeight(0.83f)
         .expensesGraphics()
     if (expenseStatsDisplayed) {
-        ExpensesStats(expenses = expenses, limit = limit,
+        ExpensesStats(
+            expenses = expenses, limits = dateLimits,
             currencyRate = currencyRate,
-            modifier = expensesModifier)
+            modifier = expensesModifier
+        )
     } else {
-        ExpensesList(expenses = expenses,
+        ExpensesList(
+            expenses = expenses,
             currencyRate = currencyRate,
-            modifier = expensesModifier)
+            modifier = expensesModifier
+        )
     }
     HomeScreenButtons(
         onShowCategoriesSheet = viewModel::displayCategoriesSheet,
@@ -228,10 +223,12 @@ fun HomeScreenButtons(
 }
 
 @Composable
-fun ExpensesStats(expenses: List<ExpenseTuple>,
-                  currencyRate: CurrencyRate,
-                  limit: Limit?,
-                  modifier: Modifier = Modifier) {
+fun ExpensesStats(
+    expenses: List<ExpenseTuple>,
+    currencyRate: CurrencyRate,
+    limits: List<Limit>,
+    modifier: Modifier = Modifier
+) {
     LazyColumn(modifier = modifier.padding(horizontal = 16.dp)) {
         val categoryExpensesMap = expenses.groupBy { it.categoryName }
         val chartValues = categoryExpensesMap.values.map { it.sumOf { e -> e.sum } }
@@ -244,14 +241,14 @@ fun ExpensesStats(expenses: List<ExpenseTuple>,
                 )
             }
         }
-        if (limit != null) {
-            item {
-                LimitInfo(
-                    limit = limit,
-                    currencyRate = currencyRate,
-                    expensesSum = chartValues.sum()
-                )
-            }
+        items(items = limits) { limit ->
+            val limitPeriodExpenses = categoryExpensesMap.values.flatten()
+                .expenseSumForLimit(limit)
+            LimitInfo(
+                limit = limit,
+                currencyRate = currencyRate,
+                expensesSum = limitPeriodExpenses
+            )
         }
     }
 }
@@ -347,7 +344,7 @@ fun HomeScreenHeader(
         })
     Row(
         horizontalArrangement = Arrangement.Center,
-        verticalAlignment = Alignment.CenterVertically,
+        verticalAlignment = Alignment.CenterVertically
     ) {
         IconButton(onClick = { sheetState.show() }) {
             Icon(imageVector = Icons.Default.DateRange, contentDescription = null)
@@ -357,7 +354,7 @@ fun HomeScreenHeader(
             onSwitchClick = viewModel::toggleExpenseDisplayStyle,
             displayStats = displayStats
         )
-        Spacer(modifier = modifier.weight(1f))
+        Spacer(modifier = modifier.weight(0.72f))
         CalendarDropdown(
             onChangeOption = {
                 viewModel.changeDropdownOption(it)
@@ -387,7 +384,7 @@ fun ExpenseModeSwitch(
     displayStats: Boolean,
     modifier: Modifier = Modifier
 ) {
-    Row {
+    Row(modifier = modifier.height(35.dp)) {
         val primary = MaterialTheme.colorScheme.primary
         val onPrimary = MaterialTheme.colorScheme.onPrimary
         Button(
@@ -430,11 +427,18 @@ fun CalendarDropdown(
     modifier: Modifier = Modifier
 ) {
     var expanded by remember { mutableStateOf(false) }
-    Box(modifier = Modifier.padding(end = 8.dp)) {
+    Box(
+        modifier = Modifier
+            .padding(end = 8.dp)
+            .width(72.dp),
+        contentAlignment = Alignment.CenterEnd
+    ) {
         Text(
             text = calendarOption.toString().lowercase(1),
             modifier = modifier.clickable(onClick = { expanded = true }),
-            style = MaterialTheme.typography.displayMedium
+            style = MaterialTheme.typography.displayMedium,
+            fontSize = 18.sp,
+            textDecoration = TextDecoration.Underline
         )
         DropdownMenu(
             expanded = expanded,
@@ -567,9 +571,11 @@ fun HomeScreenFAB(
 }
 
 @Composable
-fun ExpenseCard(expense: ExpenseTuple,
-                currencyRate: CurrencyRate,
-                modifier: Modifier = Modifier) {
+fun ExpenseCard(
+    expense: ExpenseTuple,
+    currencyRate: CurrencyRate,
+    modifier: Modifier = Modifier
+) {
     Card(
         modifier = Modifier
             .padding(vertical = 8.dp, horizontal = 4.dp)
@@ -592,9 +598,11 @@ fun ExpenseCard(expense: ExpenseTuple,
 }
 
 @Composable
-fun ExpenseCardContent(expense: ExpenseTuple,
-                       currencyRate: CurrencyRate,
-                       modifier: Modifier = Modifier) {
+fun ExpenseCardContent(
+    expense: ExpenseTuple,
+    currencyRate: CurrencyRate,
+    modifier: Modifier = Modifier
+) {
     Row(
         modifier = modifier
             .fillMaxSize(),
@@ -620,13 +628,19 @@ private fun String.lowercase(startIdx: Int) =
 private fun List<ExpenseTuple>.filterByCategories(categories: List<Category>) =
     filter { s -> categories.any { it.name == s.categoryName } }
 
-private fun List<Limit>.findLimit(
+private fun List<ExpenseTuple>.expenseSumForLimit(limit: Limit) =
+    filter { it.date in (limit.startDate..limit.endDte) }
+        .sumOf { it.sum }
+
+private fun List<Limit>.findLimits(
     dateTimeRange: Pair<LocalDateTime, LocalDateTime>
-): Limit? {
+): List<Limit> {
     val rangeStart = dateTimeRange.first.toMillis()
     val rangeEnd = dateTimeRange.second.toMillis()
-    return find { rangeStart >= it.startDate && rangeEnd <= it.endDte }
+    return filter { it.startDate >= rangeStart && it.endDte <= rangeEnd }
 }
+
+
 
 private fun colorsList(listSize: Int) = List(size = listSize) { randomColor() }
 

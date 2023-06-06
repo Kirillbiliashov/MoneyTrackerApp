@@ -1,17 +1,10 @@
 package com.example.moneytrackerapp.ui.settingsscreen
 
-import androidx.compose.runtime.MutableState
-import androidx.compose.runtime.State
-import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.moneytrackerapp.data.entity.Category
 import com.example.moneytrackerapp.data.entity.Limit
 import com.example.moneytrackerapp.data.repo.LimitRepository
-import com.example.moneytrackerapp.ui.expensescreen.ExpenseScreenUIState
-import com.example.moneytrackerapp.utils.Currency
 import com.example.moneytrackerapp.utils.DateUtils.toMillis
-import com.maxkeppeker.sheets.core.models.base.rememberSheetState
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -19,13 +12,11 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import java.time.LocalDate
-import java.time.LocalDateTime
 import java.time.LocalTime
-import java.time.ZoneId
 
 data class SettingsScreenUIState(
-    val currentLimitSum: Double = 0.00,
-    val chosenDates: List<LocalDate> = listOf(),
+    val currentLimitSum: String = "",
+    val isLimitSumValid: Boolean = true,
     val limitsDisplayed: Boolean = false
 )
 
@@ -45,22 +36,27 @@ class SettingsScreenViewModel(
         private set
 
     fun updateLimitSum(newSumStr: String) {
-        val newSum = try {
+        val isLimitSumValid = try {
             newSumStr.toDouble()
+            true
         } catch (e: NumberFormatException) {
-            0.00
+            false
         }
-        _uiState.update { it.copy(currentLimitSum = newSum) }
+        _uiState.update {
+            it.copy(
+                currentLimitSum = newSumStr,
+                isLimitSumValid = isLimitSumValid
+            )
+        }
     }
 
-    fun updateChosenDates(newDates: List<LocalDate>) {
-        _uiState.update { it.copy(chosenDates = newDates) }
-    }
 
-    fun saveLimit(rate: Double) {
-        viewModelScope.launch {
-            val limit = _uiState.value.toLimit(rate)
-            limitRepository.saveLimit(limit)
+    fun saveLimit(rate: Double, chosenDate: LocalDate) {
+        if (_uiState.value.isValid()) {
+            viewModelScope.launch {
+                val limit = _uiState.value.toLimit(rate, chosenDate)
+                limitRepository.saveLimit(limit)
+            }
         }
     }
 
@@ -71,13 +67,17 @@ class SettingsScreenViewModel(
 
 }
 
-private fun SettingsScreenUIState.toLimit(rate: Double): Limit {
-    val startDate = LocalDateTime.of(chosenDates.first(), LocalTime.MIN)
-    val endDate = LocalDateTime.of(chosenDates.last(), LocalTime.MAX)
-    val startDateMillis = startDate.toMillis()
-    val endDateMillis = endDate.toMillis()
+private fun SettingsScreenUIState.isValid() =
+    currentLimitSum.isNotEmpty() && isLimitSumValid
+
+private fun SettingsScreenUIState.toLimit(
+    rate: Double,
+    chosenDate: LocalDate
+): Limit {
+    val startDateMillis = chosenDate.atTime(LocalTime.MIN).toMillis()
+    val endDateMillis = chosenDate.atTime(LocalTime.MAX).toMillis()
     return Limit(
-        sum = currentLimitSum * rate,
+        sum = currentLimitSum.toDouble() * rate,
         startDate = startDateMillis,
         endDte = endDateMillis
     )

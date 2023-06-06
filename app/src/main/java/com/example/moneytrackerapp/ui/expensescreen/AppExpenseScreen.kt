@@ -1,5 +1,7 @@
 package com.example.moneytrackerapp.ui.expensescreen
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -61,7 +63,8 @@ fun AddExpenseForm(
         modifier = modifier.padding(vertical = 8.dp)
     )
     OutlinedTextField(
-        value = uiState.value.sum.toString(),
+        isError = !uiState.value.isSumValid,
+        value = uiState.value.sum,
         onValueChange = viewModel::updateExpenseSum,
         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
         label = { Text(text = "Sum (${currencyRate.currency})") },
@@ -92,7 +95,7 @@ fun CategoryDropdown(
     viewModel: ExpenseScreenViewModel,
     modifier: Modifier = Modifier
 ) {
-    Box {
+    Box(modifier = modifier.animateContentSize()) {
         DropdownTextField(
             expanded = expanded,
             category = category,

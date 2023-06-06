@@ -12,6 +12,6 @@ interface LimitDao {
     @Insert(entity = Limit::class)
     suspend fun saveLimit(limit: Limit)
 
-    @Query("SELECT * FROM `limit`")
-    fun getAll(): Flow<List<Limit>>
+    @Query("SELECT * FROM `limit` ORDER BY start_date,end_date")
+    fun getAllOrdered(): Flow<List<Limit>>
 }

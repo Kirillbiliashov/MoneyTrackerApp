@@ -17,6 +17,6 @@ class LimitRepositoryImpl(private val limitDao: LimitDao) : LimitRepository {
         limitDao.saveLimit(limit)
     }
 
-    override fun getLimitsFlow(): Flow<List<Limit>> = limitDao.getAll()
+    override fun getLimitsFlow(): Flow<List<Limit>> = limitDao.getAllOrdered()
 
 }

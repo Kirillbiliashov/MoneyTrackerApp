@@ -13,12 +13,13 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import java.lang.NumberFormatException
+import kotlin.NumberFormatException
 
 data class ExpenseScreenUIState(
     val dropdownExpanded: Boolean = false,
     val name: String = "",
-    val sum: Double = 0.0,
+    val sum: String = "",
+    val isSumValid: Boolean = true,
     val category: Category? = null,
     val note: String? = null
 )
@@ -47,12 +48,13 @@ class ExpenseScreenViewModel(
     }
 
     fun updateExpenseSum(sum: String) {
-        val newSum = try {
+        val isSumValid = try {
             sum.toDouble()
+            true
         } catch (e: NumberFormatException) {
-            0.0
+            false
         }
-        _uiState.update { it.copy(sum = newSum) }
+        _uiState.update { it.copy(sum = sum, isSumValid = isSumValid) }
     }
 
     fun updateExpenseNote(note: String) {
@@ -73,8 +75,10 @@ class ExpenseScreenViewModel(
     }
 
     fun saveExpense(rate: Double) {
-        viewModelScope.launch {
-            expenseRepo.saveExpense(_uiState.value.toExpense(rate))
+        if (_uiState.value.isValid()) {
+            viewModelScope.launch {
+                expenseRepo.saveExpense(_uiState.value.toExpense(rate))
+            }
         }
     }
 
@@ -83,6 +87,9 @@ class ExpenseScreenViewModel(
 private fun ExpenseScreenUIState.toExpense(rate: Double): Expense = Expense(
     name = this.name,
     date = System.currentTimeMillis(),
-    sum = this.sum * rate,
-    categoryId = this.category?.id ?: throw IllegalStateException("Category must be chosen")
+    sum = this.sum.toDouble() * rate,
+    categoryId = this.category!!.id
 )
+
+private fun ExpenseScreenUIState.isValid() = sum.isNotEmpty()
+        && isSumValid && name.isNotEmpty() && category != null
