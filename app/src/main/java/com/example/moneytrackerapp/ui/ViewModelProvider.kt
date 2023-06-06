@@ -31,7 +31,10 @@ object ViewModelProvider {
             CategoriesScreenViewModel(moneyTrackerApp().container.categoryRepository)
         }
         initializer {
-            SettingsScreenViewModel(moneyTrackerApp().container.limitRepository)
+            SettingsScreenViewModel(
+                limitRepository = moneyTrackerApp().container.limitRepository,
+                incomeRepository = moneyTrackerApp().container.incomeRepository
+            )
         }
     }
 }

@@ -64,6 +64,7 @@ fun SettingsSheetContent(
     onUpdateCurrency: (Currency) -> Unit
 ) {
     var limitDialogDisplayed by remember { mutableStateOf(false) }
+    var incomeDialogDisplayed by remember { mutableStateOf(false) }
     Column(
         modifier = modifier
             .fillMaxSize()
@@ -77,9 +78,13 @@ fun SettingsSheetContent(
                 currencyRate = currencyRate
             )
         }
+        if (incomeDialogDisplayed) {
+            AddIncomeDialog(onHideDialog = { incomeDialogDisplayed = false })
+        }
         LimitSection(viewModel = viewModel,
             currencyRate = currencyRate,
             onAddLimit = { limitDialogDisplayed = true })
+        IncomeSection(onAddIncome = {incomeDialogDisplayed = true})
         CurrenciesSection(
             onRadioButtonClick = { onUpdateCurrency(it) },
             currencyRate = currencyRate
@@ -133,6 +138,29 @@ fun CurrenciesSection(
     }
 }
 
+@Composable
+fun IncomeSection(
+    onAddIncome: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    var incomeHistoryDisplayed by remember { mutableStateOf(false) }
+    Row(verticalAlignment = Alignment.CenterVertically) {
+        Text(text = "Income history", style = MaterialTheme.typography.displayMedium)
+        val icon = if (incomeHistoryDisplayed) Icons.Default.KeyboardArrowUp
+        else Icons.Default.KeyboardArrowDown
+        IconButton(onClick = { incomeHistoryDisplayed = !incomeHistoryDisplayed }) {
+            Icon(imageVector = icon, contentDescription = null)
+        }
+        Spacer(modifier = modifier.weight(1f))
+        Button(onClick = onAddIncome) {
+            Text(text = "Add income")
+        }
+    }
+    if (incomeHistoryDisplayed) {
+
+    }
+}
+
 
 @Composable
 fun AddLimitDialog(
@@ -161,6 +189,51 @@ fun AddLimitDialog(
             dismissOnClickOutside = true
         )
     )
+}
+
+@Composable
+fun AddIncomeDialog(onHideDialog: () -> Unit, modifier: Modifier = Modifier) {
+    Dialog(
+        onDismissRequest = onHideDialog,
+        content = {
+            Card(
+                modifier = modifier
+                    .fillMaxWidth()
+                    .fillMaxHeight(0.45F)
+            ) {
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    modifier = modifier
+                        .fillMaxSize()
+                        .padding(8.dp)
+                ) {
+                    Text(
+                        text = "Add income", style = MaterialTheme.typography.displayMedium,
+                        fontSize = 24.sp
+                    )
+                    OutlinedTextField(
+                        value = "",
+                        onValueChange = {},
+                        label = {
+                            Text(text = "Income")
+                        })
+                    Row(modifier = modifier.padding(horizontal = 24.dp, vertical = 8.dp)) {
+                        Button(onClick = onHideDialog) {
+                            Text(text = "Cancel")
+                        }
+                        Spacer(modifier = modifier.weight(1F))
+                        Button(onClick = onHideDialog) {
+                            Text(text = "Save")
+                        }
+                    }
+                }
+            }
+
+        },
+        properties = DialogProperties(
+        dismissOnBackPress = true,
+        dismissOnClickOutside = true
+    ))
 }
 
 @OptIn(ExperimentalMaterial3Api::class)

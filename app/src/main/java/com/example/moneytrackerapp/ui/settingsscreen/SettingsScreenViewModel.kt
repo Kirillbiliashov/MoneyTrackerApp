@@ -3,6 +3,7 @@ package com.example.moneytrackerapp.ui.settingsscreen
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.moneytrackerapp.data.entity.Limit
+import com.example.moneytrackerapp.data.repo.IncomeRepository
 import com.example.moneytrackerapp.data.repo.LimitRepository
 import com.example.moneytrackerapp.utils.DateUtils.toMillis
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -21,7 +22,8 @@ data class SettingsScreenUIState(
 )
 
 class SettingsScreenViewModel(
-    private val limitRepository: LimitRepository
+    private val limitRepository: LimitRepository,
+    private val incomeRepository: IncomeRepository,
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(SettingsScreenUIState())

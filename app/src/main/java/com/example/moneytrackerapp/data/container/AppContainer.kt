@@ -12,6 +12,8 @@ import com.example.moneytrackerapp.data.repo.CurrencyRepository
 import com.example.moneytrackerapp.data.repo.CurrencyRepositoryImpl
 import com.example.moneytrackerapp.data.repo.ExpenseRepository
 import com.example.moneytrackerapp.data.repo.ExpenseRepositoryImpl
+import com.example.moneytrackerapp.data.repo.IncomeRepository
+import com.example.moneytrackerapp.data.repo.IncomeRepositoryImpl
 import com.example.moneytrackerapp.data.repo.LimitRepository
 import com.example.moneytrackerapp.data.repo.LimitRepositoryImpl
 import com.example.moneytrackerapp.data.repo.SaveFileRepository
@@ -27,6 +29,7 @@ interface AppContainer {
     val saveFileRepository: SaveFileRepository
     val currencyRepository: CurrencyRepository
     val userCurrencyRepository: UserCurrencyRepository
+    val incomeRepository: IncomeRepository
 }
 
 private const val CURRENCY_PREFERENCE_NAME = "currency_preferences"
@@ -73,6 +76,10 @@ class AppDataContainer(private val context: Context) : AppContainer {
 
     override val userCurrencyRepository by lazy {
         UserCurrencyRepository(context.dataStore)
+    }
+
+    override val incomeRepository by lazy {
+        IncomeRepositoryImpl(db.getIncomeDao())
     }
 
 }
