@@ -172,9 +172,9 @@ fun AddCategoryDialogContent(
 fun AddCategoryDialogHeader(modifier: Modifier = Modifier) {
     Text(
         text = "Add Category", style = MaterialTheme.typography.displayMedium,
-        fontWeight = FontWeight.W500
+        fontWeight = FontWeight.W600
     )
-    Divider(thickness = 2.dp)
+    Divider(thickness = 0.5.dp, color = Color.Black)
 }
 
 @Composable

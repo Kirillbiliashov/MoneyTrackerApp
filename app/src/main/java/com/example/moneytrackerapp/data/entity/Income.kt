@@ -10,6 +10,9 @@ data class Income(
     val year: Int,
     val month: Int
 ) {
+
+    val yearMonthStr: String
+        get() = if (month >= 10) "" else "0$month.$year"
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
         if (other !is Income) return false
@@ -17,3 +20,4 @@ data class Income(
     }
 
 }
+

@@ -27,7 +27,7 @@ val Typography = Typography(
     labelSmall = TextStyle(
         fontFamily = Ubuntu,
         fontWeight = FontWeight.Bold,
-        fontSize = 16.sp
+        fontSize = 14.sp
     ),
     bodyLarge = TextStyle(
         fontFamily = Ubuntu,

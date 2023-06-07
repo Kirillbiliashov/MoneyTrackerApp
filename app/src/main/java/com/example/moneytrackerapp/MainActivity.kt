@@ -25,6 +25,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -39,6 +40,8 @@ import com.example.moneytrackerapp.ui.ViewModelProvider
 import com.example.moneytrackerapp.ui.homescreen.HomeScreenContent
 import com.example.moneytrackerapp.ui.homescreen.HomeScreenViewModel
 import com.example.moneytrackerapp.ui.theme.MoneyTrackerAppTheme
+import com.example.moneytrackerapp.utils.CurrencyRate
+import com.example.moneytrackerapp.utils.formatSum
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.receiveAsFlow
 
@@ -63,11 +66,19 @@ class MainActivity : ComponentActivity() {
 @Composable
 fun MoneyTrackerApp(modifier: Modifier = Modifier) {
     val viewModel: HomeScreenViewModel = viewModel(factory = ViewModelProvider.Factory)
+    val uiState = viewModel.uiState.collectAsState()
+    val displayedLimits = mutableListOf<Limit>()
     val snackbarHostState = remember { SnackbarHostState() }
     val channel = remember { Channel<Limit>(Channel.CONFLATED) }
     LaunchedEffect(channel) {
         channel.receiveAsFlow()
-            .collect { limit -> displayLimitSnackbar(limit, snackbarHostState) }
+            .collect { limit ->
+                displayLimitSnackbar(
+                    limit,
+                    uiState.value.currentCurrencyRate,
+                    snackbarHostState
+                )
+            }
     }
     Scaffold(
         snackbarHost = { SnackbarHost(snackbarHostState) },
@@ -84,7 +95,13 @@ fun MoneyTrackerApp(modifier: Modifier = Modifier) {
         ) {
             HomeScreenContent(
                 viewModel = viewModel,
-                onHitLimit = { l -> channel.trySend(l) },
+                uiState = uiState,
+                onHitLimit = { l ->
+                    if (!displayedLimits.contains(l)) {
+                        channel.trySend(l)
+                        displayedLimits.add(l)
+                    }
+                },
                 modifier = modifier.weight(1f)
             )
         }
@@ -93,10 +110,12 @@ fun MoneyTrackerApp(modifier: Modifier = Modifier) {
 
 private suspend fun displayLimitSnackbar(
     limit: Limit,
+    currencyRate: CurrencyRate,
     snackbarHostState: SnackbarHostState
 ) {
     snackbarHostState.showSnackbar(
-        message = "You have hit the limit of ${limit.sum} on ${limit.localDateRangeString()}",
+        message = "You have hit the limit of ${currencyRate.formatSum(limit.sum)} " +
+                "on ${limit.localDateRangeString()}",
         actionLabel = "OK",
         duration = SnackbarDuration.Short
     )
