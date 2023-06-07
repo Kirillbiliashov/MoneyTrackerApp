@@ -15,7 +15,7 @@ interface ExpenseDao {
                 "category.name AS category_name FROM expense JOIN category ON " +
                 "category_id = category.id"
     )
-    fun getAllByDate(): Flow<List<ExpenseTuple>>
+    fun getAll(): Flow<List<ExpenseTuple>>
 
     @Insert(entity = Expense::class)
     suspend fun saveExpense(expense: Expense)

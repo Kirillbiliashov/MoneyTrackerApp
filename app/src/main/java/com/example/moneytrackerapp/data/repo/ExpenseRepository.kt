@@ -14,7 +14,7 @@ interface ExpenseRepository {
 class ExpenseRepositoryImpl(private val expenseDao: ExpenseDao) : ExpenseRepository {
 
     override fun getAllExpensesFlow(): Flow<List<ExpenseTuple>> {
-        return expenseDao.getAllByDate()
+        return expenseDao.getAll()
     }
 
     override suspend fun saveExpense(expense: Expense) {
