@@ -78,6 +78,7 @@ import com.example.moneytrackerapp.ui.settingsscreen.SettingsScreenViewModel
 import com.example.moneytrackerapp.ui.settingsscreen.SettingsSheetContent
 import com.example.moneytrackerapp.utils.CalendarOption
 import com.example.moneytrackerapp.utils.CurrencyRate
+import com.example.moneytrackerapp.utils.DateUtils
 import com.example.moneytrackerapp.utils.DateUtils.toMillis
 import com.example.moneytrackerapp.utils.formatSum
 import com.maxkeppeker.sheets.core.models.base.rememberSheetState
@@ -136,6 +137,7 @@ fun HomeScreenContent(
         )
     }
     HomeScreenData(
+        uiState = uiState,
         chosenCategories = categoriesUiState.value.chosenCategories,
         limits = settingsViewModel.limits.collectAsState(),
         incomeHistory = settingsViewModel.incomeHistory.collectAsState(),
@@ -146,6 +148,7 @@ fun HomeScreenContent(
 
 @Composable
 fun HomeScreenData(
+    uiState: State<HomeScreenUIState>,
     chosenCategories: List<Category>,
     limits: State<List<Limit>>,
     incomeHistory: State<List<Income>>,
@@ -153,33 +156,27 @@ fun HomeScreenData(
     viewModel: HomeScreenViewModel,
     modifier: Modifier = Modifier
 ) {
-    val uiState = viewModel.uiState.collectAsState()
     val currencyRate = uiState.value.currentCurrencyRate
     val expenseStatsDisplayed = uiState.value.expenseStatsDisplayed
     val expenses =
         uiState.value.displayExpenses.filterByCategories(chosenCategories)
     val categoryExpensesMap = expenses.groupBy { it.categoryName }
     val expenseSum = expenses.fold(0.00) { acc, value -> acc + value.sum }
-    val dateLimits = limits.value.findLimits(uiState.value.localDateTimeRange)
-    dateLimits.forEach {
-        val periodExpenses = categoryExpensesMap.values.flatten()
-            .expenseSumForLimit(it)
-        if (periodExpenses >= it.sum) {
-            onHitLimit(it)
-        }
-    }
+    val dateRange = uiState.value.localDateTimeRange
+    val dateLimits = limits.value.findLimits(dateRange)
+    dateLimits.checkLimits(categoryExpensesMap.values.flatten(), onHitLimit)
     HomeScreenHeader(
         displayStats = expenseStatsDisplayed,
         uiState = uiState,
         viewModel = viewModel
     )
-    Spacer(modifier = Modifier.height(40.dp))
+    Spacer(modifier = modifier.height(40.dp))
     Text(
         text = currencyRate.formatSum(expenseSum),
         style = MaterialTheme.typography.displayLarge
     )
-    Spacer(modifier = Modifier.height(40.dp))
-    val expensesModifier = Modifier
+    Spacer(modifier = modifier.height(40.dp))
+    val expensesModifier = modifier
         .fillMaxWidth()
         .fillMaxHeight(0.83f)
         .expensesGraphics()
@@ -187,7 +184,7 @@ fun HomeScreenData(
         ExpensesStats(
             categoryExpensesMap = categoryExpensesMap,
             limits = dateLimits,
-            incomeHistory = incomeHistory.value.incomeForMonth(uiState.value.localDateTimeRange),
+            incomeHistory = incomeHistory.value.incomeForMonth(dateRange),
             currencyRate = currencyRate,
             modifier = expensesModifier
         )
@@ -275,8 +272,6 @@ fun ExpensesStats(
                 )
             }
         }
-
-
 }
 
 @Composable
@@ -533,7 +528,7 @@ fun DropdownMenuOptions(
     onItemClick: (Int) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val options = CalendarOption.values().map { it.toString().lowercase(1) }.toList()
+    val options = CalendarOption.values().dropdownList()
     options.forEachIndexed { index, s ->
         DropdownMenuItem(text = { Text(text = s) },
             onClick = { onItemClick(index) })
@@ -657,9 +652,6 @@ fun ExpenseCardContent(
     }
 }
 
-private fun String.lowercase(startIdx: Int) =
-    "${this.substring(0, startIdx)}${this.substring(startIdx).lowercase()}"
-
 private fun List<ExpenseTuple>.filterByCategories(categories: List<Category>) =
     filter { s -> categories.any { it.name == s.categoryName } }
 
@@ -668,11 +660,8 @@ private fun List<ExpenseTuple>.expenseSumForLimit(limit: Limit) =
         .sumOf { it.sum }
 
 private fun List<ExpenseTuple>.expensesForYearMonth(month: Int, year: Int): Double {
-    val yearMonth = YearMonth.of(year, month)
-    val monthEnd = yearMonth.lengthOfMonth()
-    val rangeStart = LocalDate.of(year, month, 1).atTime(LocalTime.MIN).toMillis()
-    val rangeEnd = LocalDate.of(year, month, monthEnd).atTime(LocalTime.MAX).toMillis()
-    return filter { it.date in rangeStart..rangeEnd }.sumOf { it.sum }
+    val range = DateUtils.monthRangeMillis(month, year)
+    return filter { it.date in range.first..range.second }.sumOf { it.sum }
 }
 
 private fun List<Limit>.findLimits(
@@ -683,14 +672,29 @@ private fun List<Limit>.findLimits(
     return filter { it.startDate >= rangeStart && it.endDte <= rangeEnd }
 }
 
-private fun List<Income>.incomeForMonth(range: Pair<LocalDateTime, LocalDateTime>): List<Income> {
+private fun List<Income>.incomeForMonth(
+    range: Pair<LocalDateTime, LocalDateTime>
+): List<Income> {
     val rangeStartMonth = range.first.monthValue
     val rangeEndMonth = range.second.monthValue
     return filter { it.month in rangeStartMonth..rangeEndMonth }
 }
 
+private fun List<Limit>.checkLimits(expenses: List<ExpenseTuple>,
+                                    onHitLimit: (Limit) -> Unit) {
+    forEach {
+        val periodExpenses = expenses.expenseSumForLimit(it)
+        if (periodExpenses >= it.sum) {
+            onHitLimit(it)
+        }
+    }
+}
 
+private fun Array<CalendarOption>.dropdownList() =
+    map { it.toString().lowercase(1) }.toList()
 
+private fun String.lowercase(startIdx: Int) =
+    "${this.substring(0, startIdx)}${this.substring(startIdx).lowercase()}"
 
 private fun colorsList(listSize: Int) = List(size = listSize) { randomColor() }
 

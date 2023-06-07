@@ -1,9 +1,12 @@
 package com.example.moneytrackerapp.utils
 
+import com.example.moneytrackerapp.utils.DateUtils.toMillis
 import java.time.DayOfWeek
 import java.time.Instant
 import java.time.LocalDate
 import java.time.LocalDateTime
+import java.time.LocalTime
+import java.time.YearMonth
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.time.temporal.TemporalAdjusters
@@ -82,6 +85,16 @@ object DateUtils {
     fun toLocalDate(millis: Long): LocalDate {
         val instant = Instant.ofEpochMilli(millis)
         return instant.atZone(ZoneId.systemDefault()).toLocalDate()
+    }
+
+    fun monthRangeMillis(month: Int, year: Int): Pair<Long, Long> {
+        val yearMonth = YearMonth.of(year, month)
+        val monthEnd = yearMonth.lengthOfMonth()
+        val rangeStart = LocalDate.of(year, month, 1)
+            .atTime(LocalTime.MIN).toMillis()
+        val rangeEnd = LocalDate.of(year, month, monthEnd)
+            .atTime(LocalTime.MAX).toMillis()
+        return rangeStart to rangeEnd
     }
 
 }

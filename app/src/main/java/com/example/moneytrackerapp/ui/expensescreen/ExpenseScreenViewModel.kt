@@ -35,9 +35,7 @@ class ExpenseScreenViewModel(
 
     init {
         viewModelScope.launch {
-            categoryRepo.getAllCategoriesFlow().collect {
-                categories = it
-            }
+            categoryRepo.getAllCategoriesFlow().collect { categories = it }
         }
     }
 

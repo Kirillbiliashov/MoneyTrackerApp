@@ -50,7 +50,6 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         setContent {
             MoneyTrackerAppTheme {
-                // A surface container using the 'background' color from the theme
                 Surface(
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
@@ -65,7 +64,8 @@ class MainActivity : ComponentActivity() {
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MoneyTrackerApp(modifier: Modifier = Modifier) {
-    val viewModel: HomeScreenViewModel = viewModel(factory = ViewModelProvider.Factory)
+    val viewModel: HomeScreenViewModel =
+        viewModel(factory = ViewModelProvider.Factory)
     val uiState = viewModel.uiState.collectAsState()
     val displayedLimits = mutableListOf<Limit>()
     val snackbarHostState = remember { SnackbarHostState() }
@@ -140,7 +140,6 @@ fun AppBar(onSettingsClick: () -> Unit, modifier: Modifier = Modifier) {
 @Composable
 fun AppPreview() {
     MoneyTrackerAppTheme(darkTheme = false) {
-        // A surface container using the 'background' color from the theme
         Surface(
             modifier = Modifier.fillMaxSize(),
             color = MaterialTheme.colorScheme.background

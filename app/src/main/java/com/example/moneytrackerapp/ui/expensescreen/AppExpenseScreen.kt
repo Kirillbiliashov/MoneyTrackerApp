@@ -56,28 +56,25 @@ fun AddExpenseForm(
         text = "Add expense", fontSize = 32.sp,
         modifier = modifier.padding(vertical = 16.dp)
     )
-    OutlinedTextField(
+    ExpenseTextField(
         value = uiState.value.name,
         onValueChange = viewModel::updateExpenseName,
-        label = { Text(text = "Expense name") },
-        modifier = modifier.padding(vertical = 8.dp)
+        text = "Expense name"
     )
-    OutlinedTextField(
-        isError = !uiState.value.isSumValid,
+    ExpenseTextField(
         value = uiState.value.sum,
         onValueChange = viewModel::updateExpenseSum,
-        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-        label = { Text(text = "Sum (${currencyRate.currency})") },
-        modifier = modifier.padding(vertical = 8.dp)
+        text = "Sum (${currencyRate.currency})",
+        isError = !uiState.value.isSumValid,
+        isNumericKeyboard = true
     )
     CategoryDropdown(expanded = uiState.value.dropdownExpanded,
         category = uiState.value.category,
         viewModel = viewModel)
-    OutlinedTextField(
+    ExpenseTextField(
         value = uiState.value.note ?: "",
         onValueChange = viewModel::updateExpenseNote,
-        label = { Text(text = "Note") },
-        modifier = modifier.padding(vertical = 8.dp)
+        text = "Note"
     )
     Button(onClick = {
         viewModel.saveExpense(currencyRate.rate)
@@ -85,6 +82,27 @@ fun AddExpenseForm(
     }, modifier = modifier.padding(top = 8.dp)) {
         Text(text = "Save")
     }
+}
+
+@Composable
+fun ExpenseTextField(
+    modifier: Modifier = Modifier,
+    isError: Boolean = false,
+    isNumericKeyboard: Boolean = false,
+    value: String,
+    onValueChange: (String) -> Unit,
+    text: String
+) {
+    OutlinedTextField(
+        isError = isError,
+        value = value,
+        onValueChange = onValueChange,
+        keyboardOptions = if (isNumericKeyboard)
+            KeyboardOptions(keyboardType = KeyboardType.Number)
+        else KeyboardOptions.Default,
+        label = { Text(text = text) },
+        modifier = modifier.padding(vertical = 8.dp)
+    )
 }
 
 
@@ -95,7 +113,7 @@ fun CategoryDropdown(
     viewModel: ExpenseScreenViewModel,
     modifier: Modifier = Modifier
 ) {
-    Box(modifier = modifier.animateContentSize()) {
+    Box {
         DropdownTextField(
             expanded = expanded,
             category = category,
@@ -119,7 +137,9 @@ fun CategoryDropdown(
 
 @Composable
 fun DropdownTextField(
-    expanded: Boolean, category: Category?, onIconClick: () -> Unit,
+    expanded: Boolean,
+    category: Category?,
+    onIconClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     val imageVector = if (expanded) Icons.Default.KeyboardArrowUp
