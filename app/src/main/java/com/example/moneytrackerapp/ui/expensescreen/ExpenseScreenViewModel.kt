@@ -1,5 +1,6 @@
 package com.example.moneytrackerapp.ui.expensescreen
 
+import androidx.annotation.VisibleForTesting
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.State
 import androidx.compose.runtime.mutableStateOf
@@ -89,5 +90,6 @@ private fun ExpenseScreenUIState.toExpense(rate: Double): Expense = Expense(
     categoryId = this.category!!.id
 )
 
-private fun ExpenseScreenUIState.isValid() = sum.isNotEmpty()
+@VisibleForTesting
+internal fun ExpenseScreenUIState.isValid() = sum.isNotEmpty()
         && isSumValid && name.isNotEmpty() && category != null

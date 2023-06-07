@@ -18,20 +18,6 @@ import org.junit.Assert
 import org.junit.Before
 import org.junit.Test
 
-
-class TestCategoriesRepository : CategoryRepository {
-    var saveMethodCalled: Boolean = false
-        private set
-
-    override fun getAllCategoriesFlow() =
-        MutableStateFlow(TestDatasource.categories)
-
-    override suspend fun saveCategory(category: Category) {
-        saveMethodCalled = true
-    }
-
-}
-
 @OptIn(ExperimentalCoroutinesApi::class)
 class CategoriesViewModelTest {
 
