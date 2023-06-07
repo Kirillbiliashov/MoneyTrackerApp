@@ -22,11 +22,13 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.moneytrackerapp.R
 import com.example.moneytrackerapp.data.entity.Category
 import com.example.moneytrackerapp.ui.ViewModelProvider
 import com.example.moneytrackerapp.utils.CurrencyRate
@@ -53,18 +55,18 @@ fun AddExpenseForm(
     val viewModel: ExpenseScreenViewModel = viewModel(factory = ViewModelProvider.Factory)
     val uiState = viewModel.uiState.collectAsState()
     Text(
-        text = "Add expense", fontSize = 32.sp,
+        text = stringResource(R.string.add_expense), fontSize = 32.sp,
         modifier = modifier.padding(vertical = 16.dp)
     )
     ExpenseTextField(
         value = uiState.value.name,
         onValueChange = viewModel::updateExpenseName,
-        text = "Expense name"
+        text = stringResource(R.string.expense_name)
     )
     ExpenseTextField(
         value = uiState.value.sum,
         onValueChange = viewModel::updateExpenseSum,
-        text = "Sum (${currencyRate.currency})",
+        text = stringResource(R.string.sum, currencyRate.currency),
         isError = !uiState.value.isSumValid,
         isNumericKeyboard = true
     )
@@ -74,13 +76,13 @@ fun AddExpenseForm(
     ExpenseTextField(
         value = uiState.value.note ?: "",
         onValueChange = viewModel::updateExpenseNote,
-        text = "Note"
+        text = stringResource(R.string.note)
     )
     Button(onClick = {
         viewModel.saveExpense(currencyRate.rate)
         onSaveClick()
     }, modifier = modifier.padding(top = 8.dp)) {
-        Text(text = "Save")
+        Text(text = stringResource(R.string.save))
     }
 }
 
@@ -145,7 +147,7 @@ fun DropdownTextField(
     val imageVector = if (expanded) Icons.Default.KeyboardArrowUp
     else Icons.Default.KeyboardArrowDown
     OutlinedTextField(
-        value = category?.name ?: "Select category",
+        value = category?.name ?: stringResource(R.string.select_category),
         readOnly = true,
         trailingIcon = {
             Icon(
@@ -156,7 +158,7 @@ fun DropdownTextField(
         },
         onValueChange = {},
         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-        label = { Text(text = "Category") },
+        label = { Text(text = stringResource(R.string.category_text)) },
         modifier = modifier.padding(vertical = 8.dp)
     )
 }

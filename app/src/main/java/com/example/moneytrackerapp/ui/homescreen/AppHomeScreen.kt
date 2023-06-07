@@ -60,11 +60,13 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.CompositingStrategy
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.moneytrackerapp.R
 import com.example.moneytrackerapp.data.entity.Category
 import com.example.moneytrackerapp.data.entity.ExpenseTuple
 import com.example.moneytrackerapp.data.entity.Income
@@ -242,7 +244,8 @@ fun ExpensesStats(
     modifier: Modifier = Modifier
 ) {
         LazyColumn(modifier = modifier.padding(horizontal = 16.dp)) {
-            val chartValues = categoryExpensesMap.values.map { it.sumOf { e -> e.sum } }
+            val chartValues = categoryExpensesMap.values
+                .map { it.sumOf { e -> e.sum } }
             if (chartValues.isNotEmpty()) {
                 item {
                     ExpenseCharts(
@@ -254,7 +257,10 @@ fun ExpensesStats(
             }
             items(items = incomeHistory) {
                 ProgressInfo(
-                    header = "Expenses/Income (${it.yearMonthStr}): ",
+                    header = stringResource(
+                        R.string.expenses_to_income,
+                        it.yearMonthStr
+                    ),
                     currencyRate = currencyRate,
                     expensesSum = categoryExpensesMap.values.flatten()
                         .expensesForYearMonth(it.month, it.year),
@@ -265,7 +271,10 @@ fun ExpensesStats(
                 val limitPeriodExpenses = categoryExpensesMap.values.flatten()
                     .expenseSumForLimit(limit)
                 ProgressInfo(
-                    header = "Limit (${limit.localDateRangeString()}): ",
+                    header = stringResource(
+                        R.string.limit,
+                        limit.localDateRangeString()
+                    ),
                     currencyRate = currencyRate,
                     expensesSum = limitPeriodExpenses,
                     maxValue = limit.sum
@@ -284,12 +293,12 @@ fun ExpenseCharts(
     val barChartMap = chartValues.zip(categoryExpensesMap.keys.toList()).toMap()
     val chartColors = remember { colorsList(categoryExpensesMap.size) }
     Text(
-        text = "Allocation of expenses by categories:",
+        text = stringResource(R.string.allocation_of_expenses),
         style = MaterialTheme.typography.displayLarge, fontSize = 22.sp
     )
     Spacer(modifier = modifier.height(16.dp))
     Text(
-        text = "Bar chart:",
+        text = stringResource(R.string.bar_chart),
         style = MaterialTheme.typography.displayLarge, fontSize = 20.sp
     )
     BarChart(
@@ -298,7 +307,7 @@ fun ExpenseCharts(
         maxValue = chartValues.max()
     )
     Text(
-        text = "Pie chart:",
+        text = stringResource(R.string.pie_chart),
         style = MaterialTheme.typography.displayLarge, fontSize = 20.sp
     )
     PieChartHeader(
@@ -422,7 +431,10 @@ fun ExpenseModeSwitch(
             ),
             border = BorderStroke(1.dp, primary)
         ) {
-            Text(text = "List", color = if (displayStats) primary else onPrimary)
+            Text(
+                text = stringResource(id = R.string.list),
+                color = if (displayStats) primary else onPrimary
+            )
         }
         Button(
             onClick = onSwitchClick,
@@ -437,7 +449,10 @@ fun ExpenseModeSwitch(
             ),
             border = BorderStroke(1.dp, primary)
         ) {
-            Text(text = "Stats", color = if (displayStats) onPrimary else primary)
+            Text(
+                text = stringResource(R.string.stats),
+                color = if (displayStats) onPrimary else primary
+            )
         }
     }
 }
@@ -546,8 +561,10 @@ fun ExpensesList(
             modifier = modifier,
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Text(text = "you have no expenses on a given date",
-                style = MaterialTheme.typography.displayMedium)
+            Text(
+                text = stringResource(R.string.no_expenses_msg),
+                style = MaterialTheme.typography.displayMedium
+            )
         }
     } else {
         LazyColumn(
@@ -561,7 +578,10 @@ fun ExpensesList(
                         .fillMaxWidth()
                         .padding(vertical = 8.dp)
                 ) {
-                    Text(text = category, style = MaterialTheme.typography.displayMedium)
+                    Text(
+                        text = category,
+                        style = MaterialTheme.typography.displayMedium
+                    )
                     categoryExpensesMap[category]?.forEach {
                         ExpenseCard(expense = it, currencyRate = currencyRate)
                     }

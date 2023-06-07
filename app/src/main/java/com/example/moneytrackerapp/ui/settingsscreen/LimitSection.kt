@@ -29,6 +29,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
@@ -36,6 +37,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
+import com.example.moneytrackerapp.R
 import com.example.moneytrackerapp.data.entity.Limit
 import com.example.moneytrackerapp.data.entity.localDateRangeString
 import com.example.moneytrackerapp.utils.Currency
@@ -73,13 +75,16 @@ fun LimitSection(
     }
     Column(modifier = modifier.animateContentSize()) {
         Row(verticalAlignment = Alignment.CenterVertically) {
-            Text(text = "Limits", style = MaterialTheme.typography.displayMedium)
+            Text(
+                text = stringResource(R.string.limits),
+                style = MaterialTheme.typography.displayMedium
+            )
             IconButton(onClick = viewModel::toggleDisplayLimits) {
                 Icon(imageVector = icon, contentDescription = null)
             }
             Spacer(modifier = modifier.weight(1F))
             Button(onClick = viewModel::showLimitDialog) {
-                Text(text = "Add limit")
+                Text(text = stringResource(R.string.add_limit))
             }
         }
         if (uiState.value.limitsDisplayed) {
@@ -165,7 +170,7 @@ fun AddLimitDialogContent(
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Text(
-                text = "Add Limit",
+                text = stringResource(R.string.add_limit),
                 style = MaterialTheme.typography.displayMedium,
                 fontWeight = FontWeight.W600
             )
@@ -199,7 +204,12 @@ fun LimitSumTextField(
         isError = !uiState.value.isLimitSumValid,
         value = uiState.value.currentLimitSum,
         onValueChange = onValueChange,
-        label = { Text(text = "Sum ($currency)", fontSize = 16.sp) },
+        label = {
+            Text(
+                text = stringResource(R.string.sum, currency),
+                fontSize = 16.sp
+            )
+        },
         keyboardOptions = KeyboardOptions(
             keyboardType = KeyboardType.Number,
             imeAction = ImeAction.Done

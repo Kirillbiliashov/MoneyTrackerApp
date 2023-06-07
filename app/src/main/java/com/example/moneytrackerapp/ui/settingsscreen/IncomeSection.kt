@@ -28,6 +28,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
@@ -35,6 +36,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
+import com.example.moneytrackerapp.R
 import com.example.moneytrackerapp.data.entity.Income
 import com.example.moneytrackerapp.utils.Currency
 import com.example.moneytrackerapp.utils.CurrencyRate
@@ -60,7 +62,10 @@ fun IncomeSection(
     }
     Column(modifier = modifier.animateContentSize()) {
         Row(verticalAlignment = Alignment.CenterVertically) {
-            Text(text = "Income history", style = MaterialTheme.typography.displayMedium)
+            Text(
+                text = stringResource(R.string.income_history),
+                style = MaterialTheme.typography.displayMedium
+            )
             val icon = if (incomeHistoryDisplayed) Icons.Default.KeyboardArrowUp
             else Icons.Default.KeyboardArrowDown
             IconButton(onClick = viewModel::toggleIncomeHistory) {
@@ -68,7 +73,7 @@ fun IncomeSection(
             }
             Spacer(modifier = modifier.weight(1f))
             Button(onClick = viewModel::showIncomeDialog) {
-                Text(text = "Add income")
+                Text(text = stringResource(R.string.add_income))
             }
         }
         if (incomeHistoryDisplayed) {
@@ -150,7 +155,7 @@ fun AddIncomeDialogContent(
                 .fillMaxSize()
         ) {
             Text(
-                text = "Add income",
+                text = stringResource(R.string.add_income),
                 style = MaterialTheme.typography.displayMedium,
                 fontWeight = FontWeight.W600
             )
@@ -182,7 +187,7 @@ fun IncomeDialogTextField(
         isError = !uiState.value.isIncomeSumValid,
         label = {
             Text(
-                text = "Income ($currency)",
+                text = stringResource(R.string.income, currency),
                 fontSize = 16.sp
             )
         },
@@ -206,11 +211,11 @@ fun DialogButtons(
             .fillMaxWidth(0.7f)
     ) {
         Button(onClick = onCancelClick) {
-            Text(text = "Cancel")
+            Text(text = stringResource(R.string.cancel))
         }
         Spacer(modifier = modifier.weight(1F))
         Button(onClick = onSaveClick) {
-            Text(text = "Save")
+            Text(text = stringResource(R.string.save))
         }
     }
 }

@@ -39,6 +39,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
@@ -48,6 +49,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
+import com.example.moneytrackerapp.R
 import com.example.moneytrackerapp.data.entity.Income
 import com.example.moneytrackerapp.data.entity.Limit
 import com.example.moneytrackerapp.data.entity.localDateRangeString
@@ -92,7 +94,7 @@ fun SettingsSheetContent(
         Spacer(modifier = modifier.weight(1f))
         Button(onClick = onButtonClick,
             modifier = modifier.padding(bottom = 64.dp)) {
-            Text(text = "Ok")
+            Text(text = stringResource(R.string.OK))
         }
     }
 }
@@ -100,11 +102,10 @@ fun SettingsSheetContent(
 @Composable
 fun SaveFileText(onTextClick: () -> Unit, modifier: Modifier = Modifier) {
     Text(
-        text = "Save expenses to a file",
+        text = stringResource(R.string.save_expenses_to_file),
         textDecoration = TextDecoration.Underline,
         fontSize = 16.sp,
-        modifier = modifier
-            .clickable(onClick = onTextClick)
+        modifier = modifier.clickable(onClick = onTextClick)
     )
 }
 
@@ -117,7 +118,10 @@ fun CurrenciesSection(
     var currenciesDisplayed by remember { mutableStateOf(false) }
     Column(modifier = modifier.animateContentSize()) {
         Row(verticalAlignment = Alignment.CenterVertically) {
-            Text(text = "Currency", style = MaterialTheme.typography.displayMedium)
+            Text(
+                text = stringResource(R.string.currency),
+                style = MaterialTheme.typography.displayMedium
+            )
             val icon = if (currenciesDisplayed) Icons.Default.KeyboardArrowUp
             else Icons.Default.KeyboardArrowDown
             IconButton(onClick = { currenciesDisplayed = !currenciesDisplayed }) {

@@ -29,12 +29,14 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.moneytrackerapp.R
 import com.example.moneytrackerapp.data.entity.Category
 import com.example.moneytrackerapp.ui.ViewModelProvider
 
@@ -68,7 +70,7 @@ fun CategoriesSheetContent(
             onClick = onButtonClick,
             modifier = modifier.padding(bottom = 64.dp)
         ) {
-            Text(text = "Ok")
+            Text(text = stringResource(R.string.OK))
         }
     }
 }
@@ -81,7 +83,7 @@ fun AddDialogButton(onClick: () -> Unit, modifier: Modifier = Modifier) {
             .padding(vertical = 20.dp)
             .width(100.dp)
     ) {
-        Text(text = "+ Add", fontSize = 18.sp)
+        Text(text = stringResource(R.string.add_category_btn), fontSize = 18.sp)
     }
 }
 
@@ -155,7 +157,7 @@ fun AddCategoryDialogContent(
         OutlinedTextField(
             value = textFieldValue,
             onValueChange = viewModel::changeTextFieldValue,
-            label = { Text(text = "Category", fontSize = 16.sp) },
+            label = { Text(text = stringResource(R.string.category_text), fontSize = 16.sp) },
             modifier = modifier.padding(top = 16.dp)
         )
         AddCategoryDialogButtons(
@@ -171,7 +173,8 @@ fun AddCategoryDialogContent(
 @Composable
 fun AddCategoryDialogHeader(modifier: Modifier = Modifier) {
     Text(
-        text = "Add Category", style = MaterialTheme.typography.displayMedium,
+        text = stringResource(R.string.add_category_text),
+        style = MaterialTheme.typography.displayMedium,
         fontWeight = FontWeight.W600
     )
     Divider(thickness = 0.5.dp, color = Color.Black)
@@ -189,11 +192,11 @@ fun AddCategoryDialogButtons(
             .fillMaxWidth(0.7f)
     ) {
         Button(onClick = onCancelClick) {
-            Text(text = "Cancel")
+            Text(text = stringResource(R.string.cancel))
         }
         Spacer(modifier = modifier.weight(1f))
         Button(onClick = onSaveClick) {
-            Text(text = "Save")
+            Text(text = stringResource(R.string.save))
         }
     }
 }
@@ -208,7 +211,10 @@ fun AllCategoriesOption(
             .clickable(onClick = {})
             .padding(8.dp)
     ) {
-        Text(text = "All", style = MaterialTheme.typography.displayMedium)
+        Text(
+            text = stringResource(R.string.all),
+            style = MaterialTheme.typography.displayMedium
+        )
         Spacer(modifier = modifier.weight(1f))
         if (allCategoriesChosen) {
             Icon(imageVector = Icons.Default.Check, contentDescription = null)
