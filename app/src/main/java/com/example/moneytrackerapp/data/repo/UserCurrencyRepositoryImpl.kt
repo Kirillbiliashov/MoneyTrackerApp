@@ -11,12 +11,19 @@ import kotlinx.coroutines.flow.map
 import java.io.IOException
 
 
-class UserCurrencyRepository(private val dataStore: DataStore<Preferences>) {
+interface UserCurrencyRepository {
+    suspend fun saveCurrency(currencyName: String)
+    val currency: Flow<String>
+}
+
+class UserCurrencyRepositoryImpl(
+    private val dataStore: DataStore<Preferences>
+) : UserCurrencyRepository {
     private companion object {
         val CURRENCY_NAME = stringPreferencesKey("currency_name")
     }
 
-    val currency: Flow<String> = dataStore.data
+    override val currency: Flow<String> = dataStore.data
         .catch {
             if (it is IOException) {
                 emit(emptyPreferences())
@@ -28,7 +35,7 @@ class UserCurrencyRepository(private val dataStore: DataStore<Preferences>) {
             preferences[CURRENCY_NAME] ?: "USD"
         }
 
-    suspend fun saveCurrency(currencyName: String) {
+    override suspend fun saveCurrency(currencyName: String) {
         dataStore.edit { preferences ->
             preferences[CURRENCY_NAME] = currencyName
         }

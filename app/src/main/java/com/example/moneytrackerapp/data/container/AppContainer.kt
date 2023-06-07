@@ -18,6 +18,7 @@ import com.example.moneytrackerapp.data.repo.LimitRepository
 import com.example.moneytrackerapp.data.repo.LimitRepositoryImpl
 import com.example.moneytrackerapp.data.repo.SaveFileRepository
 import com.example.moneytrackerapp.data.repo.UserCurrencyRepository
+import com.example.moneytrackerapp.data.repo.UserCurrencyRepositoryImpl
 import com.example.moneytrackerapp.data.repo.WorkerManagerSaveFileRepository
 import retrofit2.Retrofit
 import retrofit2.converter.scalars.ScalarsConverterFactory
@@ -75,7 +76,7 @@ class AppDataContainer(private val context: Context) : AppContainer {
     }
 
     override val userCurrencyRepository by lazy {
-        UserCurrencyRepository(context.dataStore)
+        UserCurrencyRepositoryImpl(context.dataStore)
     }
 
     override val incomeRepository by lazy {
