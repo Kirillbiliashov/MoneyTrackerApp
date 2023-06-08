@@ -16,7 +16,6 @@ data class Limit(
     @ColumnInfo(name = "end_date") val endDte: Long
 )
 
-
 fun Limit.localDateRangeString(): String {
     val dateFormat = SimpleDateFormat("dd.MM.yyyy", Locale.US)
     dateFormat.timeZone = TimeZone.getDefault()

@@ -1,5 +1,6 @@
 package com.example.moneytrackerapp.ui.settingsscreen
 
+import androidx.annotation.VisibleForTesting
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.moneytrackerapp.data.entity.Income
@@ -137,10 +138,12 @@ class SettingsScreenViewModel(
 
 }
 
-private fun LimitUIState.isValid() =
+@VisibleForTesting
+internal fun LimitUIState.isValid() =
     currentLimitSum.isNotEmpty() && isLimitSumValid
 
-private fun IncomeUIState.isValid() =
+@VisibleForTesting
+internal fun IncomeUIState.isValid() =
     currentIncomeSum.isNotEmpty() && isIncomeSumValid
 
 private fun LimitUIState.toLimit(
