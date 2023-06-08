@@ -33,7 +33,7 @@ Application that lets you track your expenses, set expense limits, add income an
 * Proceed to project dir and run the following command: `./gradlew build`. If you don't have gradle installed,
  proceed to this [guide](https://gradle.org/install/)
 * If you want to run UI tests, use this command: `./gradlew connectedAndroidTest `. Keep in mind that they are run using android device, so you need to connect your own device or use emulator. 
-* You can also run [apk file](https://github.com/Kirillbiliashov/MoneyTrackerApp/blob/master/apk/money_tracker.apk) directly. If you don't know how to do this, proceed to this [guide](https://www.javatpoint.com/how-to-install-apk-on-android).
+* You can also run [apk file](https://github.com/Kirillbiliashov/MoneyTrackerApp/raw/master/apk/money_tracker.apk) directly. If you don't know how to do this, proceed to this [guide](https://www.javatpoint.com/how-to-install-apk-on-android).
 
 
 
