@@ -52,7 +52,8 @@ class HomeScreenViewModel(
 
     private var _uiState = MutableStateFlow(HomeScreenUIState())
     val uiState: StateFlow<HomeScreenUIState> = _uiState
-    private var expenses: List<ExpenseTuple> = listOf()
+    internal var expenses: List<ExpenseTuple> = listOf()
+        private set
 
     init {
         viewModelScope.launch {

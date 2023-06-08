@@ -1,8 +1,9 @@
 package com.example.moneytrackerapp.viewmodel
 
-import com.example.moneytrackerapp.ui.categoriesscreen.CategoriesScreenViewModel
 import com.example.moneytrackerapp.ui.expensescreen.ExpenseScreenViewModel
 import com.example.moneytrackerapp.ui.expensescreen.isValid
+import com.example.moneytrackerapp.viewmodel.repository.TestCategoriesRepository
+import com.example.moneytrackerapp.viewmodel.repository.TestExpenseRepository
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.TestDispatcher
