@@ -160,10 +160,16 @@ fun HomeScreenData(
 ) {
     val currencyRate = uiState.value.currentCurrencyRate
     val expenseStatsDisplayed = uiState.value.expenseStatsDisplayed
-    val expenses =
-        uiState.value.displayExpenses.filterByCategories(chosenCategories)
-    val categoryExpensesMap = expenses.groupBy { it.categoryName }
-    val expenseSum = expenses.fold(0.00) { acc, value -> acc + value.sum }
+    val displayExpenses = uiState.value.displayExpenses
+    val expenses = remember(displayExpenses, chosenCategories) {
+        displayExpenses.filterByCategories(chosenCategories)
+    }
+    val categoryExpensesMap = remember(expenses) {
+        expenses.groupBy { it.categoryName }
+    }
+    val expenseSum = remember(expenses, chosenCategories) {
+        expenses.fold(0.00) { acc, value -> acc + value.sum }
+    }
     val dateRange = uiState.value.localDateTimeRange
     val dateLimits = limits.value.findLimits(dateRange)
     dateLimits.checkLimits(categoryExpensesMap.values.flatten(), onHitLimit)
@@ -243,42 +249,47 @@ fun ExpensesStats(
     incomeHistory: List<Income>,
     modifier: Modifier = Modifier
 ) {
-        LazyColumn(modifier = modifier.padding(horizontal = 16.dp)) {
-            val chartValues = categoryExpensesMap.values
-                .map { it.sumOf { e -> e.sum } }
-            if (chartValues.isNotEmpty()) {
-                item {
-                    ExpenseCharts(
-                        chartValues = chartValues,
-                        categoryExpensesMap = categoryExpensesMap,
-                        currencyRate = currencyRate
-                    )
-                }
-            }
-            items(items = incomeHistory) {
-                ProgressInfo(
-                    header = stringResource(
-                        R.string.expenses_to_income,
-                        it.yearMonthStr
-                    ),
-                    currencyRate = currencyRate,
-                    expensesSum = categoryExpensesMap.values.flatten()
-                        .expensesForYearMonth(it.month, it.year),
-                    maxValue = it.sum
+    val expenses = categoryExpensesMap.values
+    val chartValues = remember(expenses) {
+        expenses.map { it.sumOf { e -> e.sum } }
+    }
+    LazyColumn(modifier = modifier.padding(horizontal = 16.dp)) {
+        if (chartValues.isNotEmpty()) {
+            item {
+                ExpenseCharts(
+                    chartValues = chartValues,
+                    categoryExpensesMap = categoryExpensesMap,
+                    currencyRate = currencyRate
                 )
             }
-            items(items = limits) { limit ->
-                val limitPeriodExpenses = categoryExpensesMap.values.flatten()
-                    .expenseSumForLimit(limit)
-                ProgressInfo(
-                    header = stringResource(
-                        R.string.limit,
-                        limit.localDateRangeString()
-                    ),
-                    currencyRate = currencyRate,
-                    expensesSum = limitPeriodExpenses,
-                    maxValue = limit.sum
-                )
+        }
+        items(items = incomeHistory, key = { it.id }) {
+            val progressExpenseSum = remember(expenses) {
+                expenses.flatten().expensesForYearMonth(it.month, it.year)
+            }
+            ProgressInfo(
+                header = stringResource(
+                    R.string.expenses_to_income,
+                    it.yearMonthStr
+                ),
+                currencyRate = currencyRate,
+                expensesSum = progressExpenseSum,
+                maxValue = it.sum
+            )
+        }
+        items(items = limits, key = { it.id }) { limit ->
+            val limitPeriodExpenses = remember(expenses, limit) {
+                expenses.flatten().expenseSumForLimit(limit)
+            }
+            ProgressInfo(
+                header = stringResource(
+                    R.string.limit,
+                    limit.localDateRangeString()
+                ),
+                currencyRate = currencyRate,
+                expensesSum = limitPeriodExpenses,
+                maxValue = limit.sum
+            )
             }
         }
 }
@@ -290,7 +301,9 @@ fun ExpenseCharts(
     currencyRate: CurrencyRate,
     modifier: Modifier = Modifier
 ) {
-    val barChartMap = chartValues.zip(categoryExpensesMap.keys.toList()).toMap()
+    val barChartMap = remember(chartValues, categoryExpensesMap.keys) {
+        chartValues.zip(categoryExpensesMap.keys.toList()).toMap()
+    }
     val chartColors = remember { colorsList(categoryExpensesMap.size) }
     Text(
         text = stringResource(R.string.allocation_of_expenses),
@@ -543,7 +556,7 @@ fun DropdownMenuOptions(
     onItemClick: (Int) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val options = CalendarOption.values().dropdownList()
+    val options = remember { CalendarOption.values().dropdownList() }
     options.forEachIndexed { index, s ->
         DropdownMenuItem(text = { Text(text = s) },
             onClick = { onItemClick(index) })
@@ -572,7 +585,8 @@ fun ExpensesList(
                 .padding(bottom = 16.dp),
             contentPadding = PaddingValues(8.dp)
         ) {
-            items(items = categoryExpensesMap.keys.toList()) { category ->
+            items(items = categoryExpensesMap.keys.toList(),
+                key = { it }) { category ->
                 Column(
                     modifier = modifier
                         .fillMaxWidth()
@@ -655,8 +669,7 @@ fun ExpenseCardContent(
     modifier: Modifier = Modifier
 ) {
     Row(
-        modifier = modifier
-            .fillMaxSize(),
+        modifier = modifier.fillMaxSize(),
         verticalAlignment = Alignment.CenterVertically
     ) {
         Text(text = expense.name, fontSize = 18.sp)

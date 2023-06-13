@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Size
@@ -30,11 +31,11 @@ fun PieChart(
 ) {
     val chartDegrees = 360f
     var startAngle = 270f
-    val proportions = inputValues.map {
-        it * 100 / inputValues.sum()
+    val proportions = remember(inputValues) {
+        inputValues.map { it * 100 / inputValues.sum() }
     }
-    val angleProgress = proportions.map { prop ->
-        chartDegrees * prop / 100
+    val angleProgress = remember(proportions) {
+        proportions.map { prop -> chartDegrees * prop / 100 }
     }
     BoxWithConstraints(modifier = modifier, contentAlignment = Alignment.Center) {
         val canvasSize = Integer.min(constraints.maxWidth, constraints.maxHeight)
