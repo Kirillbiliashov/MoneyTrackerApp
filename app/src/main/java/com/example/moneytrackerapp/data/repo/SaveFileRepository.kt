@@ -8,14 +8,19 @@ import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.WorkManager
 import com.example.moneytrackerapp.data.entity.ExpenseTuple
 import com.example.moneytrackerapp.workers.SaveFileWorker
+import dagger.hilt.android.qualifiers.ApplicationContext
+import javax.inject.Inject
+import javax.inject.Singleton
 
 interface SaveFileRepository {
 
     fun saveExpensesToFile(expenses: List<ExpenseTuple>)
 }
 
-
-class WorkerManagerSaveFileRepository(ctxt: Context) : SaveFileRepository {
+@Singleton
+class WorkerManagerSaveFileRepository @Inject constructor(
+    @ApplicationContext ctxt: Context
+) : SaveFileRepository {
 
     private val workManager = WorkManager.getInstance(ctxt)
 
@@ -33,8 +38,10 @@ class WorkerManagerSaveFileRepository(ctxt: Context) : SaveFileRepository {
 
     private fun generateWorkerInputData(expenses: List<ExpenseTuple>): Data {
         val builder = Data.Builder()
-        return builder.putString(SaveFileWorker.EXPENSES_KEY,
-            getOutputStr(expenses)).build()
+        return builder.putString(
+            SaveFileWorker.EXPENSES_KEY,
+            getOutputStr(expenses)
+        ).build()
     }
 
     private fun getOutputStr(expenses: List<ExpenseTuple>): String {

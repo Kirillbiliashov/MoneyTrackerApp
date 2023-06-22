@@ -22,18 +22,4 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun getLimitDao(): LimitDao
     abstract fun getIncomeDao(): IncomeDao
 
-    companion object {
-        @Volatile
-        private var Instance: AppDatabase? = null
-
-        fun getDatabase(context: Context): AppDatabase {
-            return Instance ?: synchronized(this) {
-                Room.databaseBuilder(context, AppDatabase::class.java, "money_tracker")
-                    .fallbackToDestructiveMigration()
-                    .build()
-                    .also { Instance = it }
-            }
-        }
-    }
-
 }

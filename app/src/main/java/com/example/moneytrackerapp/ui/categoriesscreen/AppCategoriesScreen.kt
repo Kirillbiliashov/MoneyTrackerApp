@@ -38,7 +38,6 @@ import androidx.compose.ui.window.DialogProperties
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.moneytrackerapp.R
 import com.example.moneytrackerapp.data.entity.Category
-import com.example.moneytrackerapp.ui.ViewModelProvider
 
 @Composable
 fun CategoriesSheetContent(

@@ -37,15 +37,16 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.moneytrackerapp.data.entity.Limit
 import com.example.moneytrackerapp.data.entity.localDateRangeString
-import com.example.moneytrackerapp.ui.ViewModelProvider
 import com.example.moneytrackerapp.ui.homescreen.HomeScreenContent
 import com.example.moneytrackerapp.ui.homescreen.HomeScreenViewModel
 import com.example.moneytrackerapp.ui.theme.MoneyTrackerAppTheme
 import com.example.moneytrackerapp.utils.CurrencyRate
 import com.example.moneytrackerapp.utils.formatSum
+import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.receiveAsFlow
 
+@AndroidEntryPoint
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -65,8 +66,7 @@ class MainActivity : ComponentActivity() {
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MoneyTrackerApp(modifier: Modifier = Modifier) {
-    val viewModel: HomeScreenViewModel =
-        viewModel(factory = ViewModelProvider.Factory)
+    val viewModel: HomeScreenViewModel = viewModel()
     val uiState = viewModel.uiState.collectAsState()
     val displayedLimits = mutableListOf<Limit>()
     val snackbarHostState = remember { SnackbarHostState() }

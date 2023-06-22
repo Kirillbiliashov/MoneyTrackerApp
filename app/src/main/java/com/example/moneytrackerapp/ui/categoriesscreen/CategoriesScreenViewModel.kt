@@ -4,10 +4,12 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.moneytrackerapp.data.entity.Category
 import com.example.moneytrackerapp.data.repo.CategoryRepository
+import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import javax.inject.Inject
 
 data class CategoriesScreenUIState(
     val chosenCategories: List<Category> = listOf(),
@@ -15,7 +17,8 @@ data class CategoriesScreenUIState(
     val addCategoryName: String = ""
 )
 
-class CategoriesScreenViewModel(
+@HiltViewModel
+class CategoriesScreenViewModel @Inject constructor(
     private val categoryRepo: CategoryRepository
 ) : ViewModel() {
 

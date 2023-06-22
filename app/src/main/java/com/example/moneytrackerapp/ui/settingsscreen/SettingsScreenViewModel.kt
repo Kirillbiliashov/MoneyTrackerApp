@@ -8,6 +8,7 @@ import com.example.moneytrackerapp.data.entity.Limit
 import com.example.moneytrackerapp.data.repo.IncomeRepository
 import com.example.moneytrackerapp.data.repo.LimitRepository
 import com.example.moneytrackerapp.utils.DateUtils.toMillis
+import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -16,6 +17,7 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import java.time.LocalDate
 import java.time.LocalTime
+import javax.inject.Inject
 
 data class IncomeUIState(
     val currentIncomeSum: String = "",
@@ -31,7 +33,8 @@ data class LimitUIState(
     val limitsDisplayed: Boolean = false
 )
 
-class SettingsScreenViewModel(
+@HiltViewModel
+class SettingsScreenViewModel @Inject constructor(
     private val limitRepository: LimitRepository,
     private val incomeRepository: IncomeRepository
 ) : ViewModel() {

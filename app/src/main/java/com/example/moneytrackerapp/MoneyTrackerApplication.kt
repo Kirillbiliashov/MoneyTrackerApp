@@ -1,17 +1,8 @@
 package com.example.moneytrackerapp
 
 import android.app.Application
-import com.example.moneytrackerapp.data.container.AppContainer
-import com.example.moneytrackerapp.data.container.AppDataContainer
 
-class MoneyTrackerApplication : Application() {
+import dagger.hilt.android.HiltAndroidApp
 
-    lateinit var container: AppContainer
-        private set
-
-    override fun onCreate() {
-        super.onCreate()
-        container = AppDataContainer(context = this)
-    }
-
-}
+@HiltAndroidApp
+class MoneyTrackerApplication : Application()

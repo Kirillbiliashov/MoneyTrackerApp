@@ -3,6 +3,8 @@ package com.example.moneytrackerapp.data.repo
 import com.example.moneytrackerapp.data.dao.CategoryDao
 import com.example.moneytrackerapp.data.entity.Category
 import kotlinx.coroutines.flow.Flow
+import javax.inject.Inject
+import javax.inject.Singleton
 
 interface CategoryRepository {
 
@@ -10,7 +12,10 @@ interface CategoryRepository {
     suspend fun saveCategory(category: Category)
 }
 
-class CategoryRepositoryImpl(private val categoryDao: CategoryDao) : CategoryRepository {
+@Singleton
+class CategoryRepositoryImpl @Inject constructor(
+    private val categoryDao: CategoryDao
+) : CategoryRepository {
 
     override fun getAllCategoriesFlow() = categoryDao.getAll()
     override suspend fun saveCategory(category: Category) {

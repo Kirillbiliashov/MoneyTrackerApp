@@ -3,6 +3,8 @@ package com.example.moneytrackerapp.data.repo
 import com.example.moneytrackerapp.data.dao.IncomeDao
 import com.example.moneytrackerapp.data.entity.Income
 import kotlinx.coroutines.flow.Flow
+import javax.inject.Inject
+import javax.inject.Singleton
 
 interface IncomeRepository {
 
@@ -11,9 +13,11 @@ interface IncomeRepository {
     suspend fun saveIncome(income: Income)
 }
 
-class IncomeRepositoryImpl(private val incomeDao: IncomeDao) : IncomeRepository {
+@Singleton
+class IncomeRepositoryImpl @Inject constructor(
+    private val incomeDao: IncomeDao
+) : IncomeRepository {
     override fun getAll(): Flow<List<Income>> {
-        println("getting all incomes")
         return incomeDao.getAllOrdered()
     }
 
