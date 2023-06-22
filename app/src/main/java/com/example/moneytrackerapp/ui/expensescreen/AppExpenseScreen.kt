@@ -30,7 +30,6 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.moneytrackerapp.R
 import com.example.moneytrackerapp.data.entity.Category
-import com.example.moneytrackerapp.ui.ViewModelProvider
 import com.example.moneytrackerapp.utils.CurrencyRate
 
 @Composable
@@ -52,7 +51,7 @@ fun AddExpenseForm(
     currencyRate: CurrencyRate,
     modifier: Modifier = Modifier
 ) {
-    val viewModel: ExpenseScreenViewModel = viewModel(factory = ViewModelProvider.Factory)
+    val viewModel: ExpenseScreenViewModel = viewModel()
     val uiState = viewModel.uiState.collectAsState()
     Text(
         text = stringResource(R.string.add_expense), fontSize = 32.sp,

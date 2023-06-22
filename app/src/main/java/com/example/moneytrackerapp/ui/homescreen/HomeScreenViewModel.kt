@@ -12,12 +12,14 @@ import com.example.moneytrackerapp.utils.Currency
 import com.example.moneytrackerapp.utils.CurrencyRate
 import com.example.moneytrackerapp.utils.DateUtils
 import com.example.moneytrackerapp.utils.DateUtils.toMillis
+import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import java.time.LocalDate
 import java.time.LocalDateTime
+import javax.inject.Inject
 
 data class HomeScreenUIState(
     val displayExpenses: List<ExpenseTuple> = listOf(),
@@ -43,7 +45,8 @@ data class HomeScreenUIState(
 }
 
 
-class HomeScreenViewModel(
+@HiltViewModel
+class HomeScreenViewModel @Inject constructor(
     private val expenseRepository: ExpenseRepository,
     private val saveFileRepository: SaveFileRepository,
     private val currencyRepository: CurrencyRepository,

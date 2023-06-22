@@ -72,7 +72,6 @@ import com.example.moneytrackerapp.data.entity.ExpenseTuple
 import com.example.moneytrackerapp.data.entity.Income
 import com.example.moneytrackerapp.data.entity.Limit
 import com.example.moneytrackerapp.data.entity.localDateRangeString
-import com.example.moneytrackerapp.ui.ViewModelProvider
 import com.example.moneytrackerapp.ui.categoriesscreen.CategoriesScreenViewModel
 import com.example.moneytrackerapp.ui.categoriesscreen.CategoriesSheetContent
 import com.example.moneytrackerapp.ui.expensescreen.ExpenseSheetContent
@@ -101,10 +100,9 @@ fun HomeScreenContent(
     onHitLimit: (Limit) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val factory = ViewModelProvider.Factory
-    val categoriesViewModel: CategoriesScreenViewModel = viewModel(factory = factory)
+    val categoriesViewModel: CategoriesScreenViewModel = viewModel()
     val categoriesUiState = categoriesViewModel.uiState.collectAsState()
-    val settingsViewModel: SettingsScreenViewModel = viewModel(factory = factory)
+    val settingsViewModel: SettingsScreenViewModel = viewModel()
     val currencyRate = uiState.value.currentCurrencyRate
     SheetContent(
         visible = uiState.value.expenseSheetDisplayed,
@@ -290,8 +288,8 @@ fun ExpensesStats(
                 expensesSum = limitPeriodExpenses,
                 maxValue = limit.sum
             )
-            }
         }
+    }
 }
 
 @Composable
@@ -713,8 +711,10 @@ private fun List<Income>.incomeForMonth(
     return filter { it.month in rangeStartMonth..rangeEndMonth }
 }
 
-private fun List<Limit>.checkLimits(expenses: List<ExpenseTuple>,
-                                    onHitLimit: (Limit) -> Unit) {
+private fun List<Limit>.checkLimits(
+    expenses: List<ExpenseTuple>,
+    onHitLimit: (Limit) -> Unit
+) {
     forEach {
         val periodExpenses = expenses.expenseSumForLimit(it)
         if (periodExpenses >= it.sum) {
